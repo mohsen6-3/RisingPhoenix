@@ -1,5 +1,6 @@
 from decimal import Decimal
 import logging
+import mimetypes
 
 from django.conf import settings
 from django.contrib import messages
@@ -11,11 +12,11 @@ from django.utils import timezone
 from notification.models import Notification
 from notification.utils import notify
 from rising_phoenix.moderation import image_is_clean, text_is_clean
-from .forms import ProgressCommentForm
 from .models import Contract, ContractEvent, ContractEventImage, ProgressComment, ProgressCommentImage, ProgressImage, ProgressUpdate
 import stripe
 from django.db import transaction
 from account.models import ArtisanRevenue
+from request.models import Request
 
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
@@ -35,7 +36,10 @@ def _save_images(model_cls, fk_field, fk_obj, request_files, captions=None):
         if image_file.size > max_size_bytes:
             skipped.append(f'"{image_file.name}" exceeds the size limit.')
             continue
-        if (getattr(image_file, 'content_type', '') or '').lower() not in allowed_types:
+        ct = (getattr(image_file, 'content_type', '') or '').lower()
+        if not ct or ct == 'application/octet-stream':
+            ct = (mimetypes.guess_type(image_file.name)[0] or '').lower()
+        if ct not in allowed_types:
             skipped.append(f'"{image_file.name}" is not an accepted image type.')
             continue
         if not image_is_clean(image_file):
@@ -102,12 +106,29 @@ def contract_detail_view(request, contract_id):
 
     latest_update_id = updates[-1].id if updates else None
 
+    from dispute.models import Dispute
+    my_open_dispute = contract.disputes.filter(
+        opened_by=request.user,
+        status__in=[Dispute.Status.OPEN, Dispute.Status.IN_REVIEW],
+    ).first()
+    dispute_eligible_status = contract.status in (
+        Contract.Status.IN_PROGRESS,
+        Contract.Status.COMPLETION_REQUESTED,
+    )
+    can_raise_dispute = (
+        (is_requester or is_artisan)
+        and dispute_eligible_status
+        and my_open_dispute is None
+    )
+
     return render(request, 'progress/contract_detail.html', {
         'contract': contract,
         'timeline': timeline,
         'is_artisan': is_artisan,
         'is_requester': is_requester,
         'latest_update_id': latest_update_id,
+        'can_raise_dispute': can_raise_dispute,
+        'my_open_dispute': my_open_dispute,
     })
 
 
@@ -128,11 +149,13 @@ def post_update_view(request, contract_id):
         return redirect('progress:contract_detail_view', contract_id=contract_id)
 
     body = request.POST.get('body', '').strip()
-    if not body:
-        messages.error(request, 'Update text is required.')
+    has_images = bool(request.FILES.getlist('images'))
+
+    if not body and not has_images:
+        messages.error(request, 'Please add a message or at least one image.')
         return redirect('progress:contract_detail_view', contract_id=contract_id)
 
-    if not text_is_clean(body):
+    if body and not text_is_clean(body):
         messages.error(request, 'Your update contains inappropriate language. Please revise it.')
         return redirect('progress:contract_detail_view', contract_id=contract_id)
 
@@ -168,27 +191,34 @@ def add_comment_view(request, update_id):
         messages.error(request, 'This project is already completed.')
         return redirect('progress:contract_detail_view', contract_id=contract.id)
 
-    form = ProgressCommentForm(request.POST)
-    if form.is_valid():
-        comment = ProgressComment.objects.create(
-            update=update,
-            author=request.user,
-            body=form.cleaned_data['body'],
-        )
-        captions = request.POST.getlist('image_captions')
-        for msg in _save_images(ProgressCommentImage, 'comment', comment, request.FILES, captions):
-            messages.warning(request, f'Image skipped: {msg}')
-        other_party = contract.artisan if request.user == contract.requester else contract.requester
-        notify(
-            other_party,
-            Notification.NotifType.COMMENT_ADDED,
-            'New feedback on your project',
-            body=form.cleaned_data['body'][:200],
-            link=reverse('progress:contract_detail_view', kwargs={'contract_id': contract.id}),
-        )
-    else:
-        messages.error(request, 'Feedback cannot be empty.')
+    body = request.POST.get('body', '').strip()
+    has_images = bool(request.FILES.getlist('images'))
 
+    if not body and not has_images:
+        messages.error(request, 'Please add a message or at least one image.')
+        return redirect('progress:contract_detail_view', contract_id=contract.id)
+
+    if body and not text_is_clean(body):
+        messages.error(request, 'Your feedback contains inappropriate language. Please revise it.')
+        return redirect('progress:contract_detail_view', contract_id=contract.id)
+
+    comment = ProgressComment.objects.create(
+        update=update,
+        author=request.user,
+        body=body,
+    )
+    captions = request.POST.getlist('image_captions')
+    for msg in _save_images(ProgressCommentImage, 'comment', comment, request.FILES, captions):
+        messages.warning(request, f'Image skipped: {msg}')
+    messages.success(request, 'Feedback posted.')
+    other_party = contract.artisan if request.user == contract.requester else contract.requester
+    notify(
+        other_party,
+        Notification.NotifType.COMMENT_ADDED,
+        'New feedback on your project',
+        body=body[:200] if body else '',
+        link=reverse('progress:contract_detail_view', kwargs={'contract_id': contract.id}),
+    )
     return redirect('progress:contract_detail_view', contract_id=contract.id)
 
 
@@ -206,6 +236,10 @@ def request_completion_view(request, contract_id):
 
     if not contract.is_in_progress:
         messages.error(request, 'Completion can only be requested while the project is in progress.')
+        return redirect('progress:contract_detail_view', contract_id=contract_id)
+
+    if contract.has_open_dispute:
+        messages.error(request, 'This project has an open dispute. Completion actions are paused until staff resolves it.')
         return redirect('progress:contract_detail_view', contract_id=contract_id)
 
     body = request.POST.get('body', '').strip()[:5000]
@@ -254,6 +288,10 @@ def confirm_completion_view(request, contract_id):
         messages.error(request, 'There is no pending completion request.')
         return redirect('progress:contract_detail_view', contract_id=contract_id)
 
+    if contract.has_open_dispute:
+        messages.error(request, 'This project has an open dispute. Confirmation is paused until staff resolves it.')
+        return redirect('progress:contract_detail_view', contract_id=contract_id)
+
     escrow_payment = getattr(contract, 'escrow_payment', None)
     if not escrow_payment:
         messages.error(request, 'No payment record was found for this contract.')
@@ -267,6 +305,11 @@ def confirm_completion_view(request, contract_id):
         contract.status = Contract.Status.COMPLETED
         contract.completed_at = timezone.now()
         contract.save(update_fields=['status', 'completed_at', 'updated_at'])
+
+        project_request = contract.proposal.request
+        if project_request.status != Request.Status.CLOSED:
+            project_request.status = Request.Status.CLOSED
+            project_request.save(update_fields=['status', 'updated_at'])
 
         ContractEvent.objects.create(
             contract=contract,

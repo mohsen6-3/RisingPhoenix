@@ -1,0 +1,208 @@
+{% extends "main/base.html" %}
+
+{% block title %}Dispute #{{ dispute.id }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dispute-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    @media (max-width: 992px) { .dispute-grid { grid-template-columns: 1fr; } }
+    .panel { background: #fff; border: 1px solid #efe6dd; border-radius: 12px; padding: 16px 18px; margin-bottom: 16px; }
+    .panel h3 { font-size: 1rem; font-weight: 700; color: #2c1f1a; margin-bottom: 10px; }
+    .thread { max-height: 360px; overflow-y: auto; padding-right: 6px; }
+    .msg { margin-bottom: 12px; max-width: 92%; }
+    .msg-bubble { background: #f7efe7; border: 1px solid #efe6dd; border-radius: 10px; padding: 8px 12px; font-size: 0.9rem; color: #2c1f1a; white-space: pre-wrap; word-break: break-word; }
+    .msg-bubble.staff { background: #fdecdf; border-color: #f1cfb6; }
+    .msg-meta { font-size: 0.72rem; color: #8b7461; margin-top: 4px; }
+    .msg-img { display: block; margin-top: 6px; max-width: 240px; max-height: 180px; border-radius: 6px; }
+    .compose { background: #fdf8f4; border-top: 1px solid #efe6dd; padding: 10px 12px; margin-top: 8px; border-radius: 0 0 10px 10px; }
+    .pill { padding: 3px 9px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; display: inline-block; }
+    .pill-open { background: #fff5cc; color: #8c6b00; }
+    .pill-review { background: #d6edf7; color: #0f5a72; }
+    .pill-resolved { background: #d8f0dc; color: #1d6b32; }
+    .pill-dismissed { background: #ece6df; color: #6b5a4c; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+        <div>
+            <a href="{% url 'staff:dispute_list_view' %}" class="text-decoration-none text-muted small">
+                <i class="bi bi-arrow-left"></i> Back to disputes
+            </a>
+            <h1 class="fw-bold mb-1 mt-1">Dispute #{{ dispute.id }}</h1>
+            <p class="text-muted mb-0">{{ contract.proposal.request.title }} — Contract #{{ contract.id }}</p>
+        </div>
+        <div>
+            {% if dispute.status == 'open' %}<span class="pill pill-open">Open</span>
+            {% elif dispute.status == 'in_review' %}<span class="pill pill-review">Under Review</span>
+            {% elif dispute.status == 'resolved' %}<span class="pill pill-resolved">Resolved</span>
+            {% elif dispute.status == 'dismissed' %}<span class="pill pill-dismissed">Dismissed</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="panel">
+        <h3>Summary</h3>
+        <div class="row gx-3 small">
+            <div class="col-md-3"><strong>Reason:</strong> {{ dispute.get_reason_display }}</div>
+            <div class="col-md-3"><strong>Opened by:</strong> {{ dispute.opened_by.username|default:"[deleted]" }}</div>
+            <div class="col-md-3"><strong>Opened:</strong> {{ dispute.created_at|date:"M j, Y · g:i a" }}</div>
+            <div class="col-md-3"><strong>Requester:</strong> {{ requester.username }} · <strong>Artisan:</strong> {{ artisan.username }}</div>
+        </div>
+        <hr class="my-2">
+        <p class="mb-0" style="white-space:pre-wrap;">{{ dispute.description }}</p>
+        {% if dispute.resolved_at %}
+            <hr class="my-2">
+            <div class="small text-success">
+                <strong>Resolution ({{ dispute.resolved_at|date:"M j, Y" }} by {{ dispute.resolved_by.username|default:"staff" }}):</strong>
+                {{ dispute.resolution_note|default:"No note." }}
+            </div>
+        {% endif %}
+    </div>
+
+    {% if dispute.is_open %}
+    <div class="panel">
+        <h3>Resolve this dispute</h3>
+        <form method="post" action="{% url 'staff:resolve_dispute_view' dispute.id %}">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label class="form-label small fw-bold">Resolution note</label>
+                <textarea name="resolution_note" class="form-control" rows="3" placeholder="Explain the outcome..."></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" name="action" value="in_review" class="btn btn-sm btn-info text-white">Mark Under Review</button>
+                <button type="submit" name="action" value="resolved" class="btn btn-sm btn-success">Resolve</button>
+                <button type="submit" name="action" value="dismissed" class="btn btn-sm btn-secondary">Dismiss</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="dispute-grid">
+
+        <!-- Requester ↔ Staff thread -->
+        <div class="panel" style="margin-bottom:0;">
+            <h3><i class="bi bi-chat-square-text-fill"></i> Staff ↔ Requester ({{ requester.username }})</h3>
+            <div class="thread">
+                {% if requester_thread %}
+                    {% for msg in requester_thread %}
+                        <div class="msg">
+                            <div class="msg-bubble {% if msg.sender.is_staff %}staff{% endif %}">{{ msg.body }}
+                                {% if msg.image %}<a href="{{ msg.image.url }}" target="_blank"><img class="msg-img" src="{{ msg.image.url }}" alt=""></a>{% endif %}
+                            </div>
+                            <div class="msg-meta">
+                                {% if msg.sender.is_staff %}Staff — {% endif %}{{ msg.sender.username }}
+                                · {{ msg.created_at|date:"M j · g:i a" }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted small">No messages yet in this channel.</div>
+                {% endif %}
+            </div>
+            {% if dispute.is_open %}
+            <form method="post" enctype="multipart/form-data" class="compose"
+                  action="{% url 'staff:staff_dispute_message_view' dispute.id requester.id %}">
+                {% csrf_token %}
+                <textarea name="body" class="form-control form-control-sm mb-2" rows="2" placeholder="Message {{ requester.username }}..."></textarea>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
+                    <button type="submit" class="btn btn-sm btn-dark"><i class="bi bi-send"></i> Send</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+
+        <!-- Artisan ↔ Staff thread -->
+        <div class="panel" style="margin-bottom:0;">
+            <h3><i class="bi bi-chat-square-text-fill"></i> Staff ↔ Artisan ({{ artisan.username }})</h3>
+            <div class="thread">
+                {% if artisan_thread %}
+                    {% for msg in artisan_thread %}
+                        <div class="msg">
+                            <div class="msg-bubble {% if msg.sender.is_staff %}staff{% endif %}">{{ msg.body }}
+                                {% if msg.image %}<a href="{{ msg.image.url }}" target="_blank"><img class="msg-img" src="{{ msg.image.url }}" alt=""></a>{% endif %}
+                            </div>
+                            <div class="msg-meta">
+                                {% if msg.sender.is_staff %}Staff — {% endif %}{{ msg.sender.username }}
+                                · {{ msg.created_at|date:"M j · g:i a" }}
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-muted small">No messages yet in this channel.</div>
+                {% endif %}
+            </div>
+            {% if dispute.is_open %}
+            <form method="post" enctype="multipart/form-data" class="compose"
+                  action="{% url 'staff:staff_dispute_message_view' dispute.id artisan.id %}">
+                {% csrf_token %}
+                <textarea name="body" class="form-control form-control-sm mb-2" rows="2" placeholder="Message {{ artisan.username }}..."></textarea>
+                <div class="d-flex gap-2 align-items-center">
+                    <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
+                    <button type="submit" class="btn btn-sm btn-dark"><i class="bi bi-send"></i> Send</button>
+                </div>
+            </form>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <!-- Requester ↔ Artisan original chat (read-only) -->
+    <div class="panel mt-3">
+        <h3><i class="bi bi-chat-dots-fill"></i> Requester ↔ Artisan chat (read-only)</h3>
+        <div class="thread">
+            {% if party_chat %}
+                {% for msg in party_chat %}
+                    <div class="msg">
+                        <div class="msg-bubble">{{ msg.body }}
+                            {% if msg.image %}<a href="{{ msg.image.url }}" target="_blank"><img class="msg-img" src="{{ msg.image.url }}" alt=""></a>{% endif %}
+                        </div>
+                        <div class="msg-meta">{{ msg.sender.username }} · {{ msg.created_at|date:"M j · g:i a" }}</div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="text-muted small">No conversation between the parties yet.</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Progress timeline -->
+    <div class="panel">
+        <h3><i class="bi bi-clock-history"></i> Progress updates</h3>
+        {% if progress_updates %}
+            {% for update in progress_updates %}
+                <div class="border-bottom pb-2 mb-2">
+                    <div class="small text-muted mb-1">{{ artisan.username }} · {{ update.created_at|date:"M j, Y · g:i a" }}</div>
+                    <div style="white-space:pre-wrap;">{{ update.body }}</div>
+                    {% with imgs=update.images.all %}
+                        {% if imgs %}
+                        <div class="mt-1 d-flex flex-wrap gap-2">
+                            {% for img in imgs %}
+                                <a href="{{ img.image.url }}" target="_blank">
+                                    <img src="{{ img.image.url }}" style="max-width:140px;max-height:110px;border-radius:6px;" alt="">
+                                </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <div class="text-muted small">No progress updates posted yet.</div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

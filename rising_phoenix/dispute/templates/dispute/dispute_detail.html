@@ -1,0 +1,159 @@
+{% extends "main/base.html" %}
+
+{% block title %}Dispute on {{ contract.proposal.request.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #c96f52;
+        --light-bg: #faf3ec;
+        --card-bg: #fff;
+        --text-muted: #8b7461;
+        --border-light: #efe6dd;
+    }
+
+    body { background: var(--light-bg); }
+    .dispute-shell { max-width: 880px; margin: 32px auto 60px; padding: 0 16px; }
+    .dispute-eyebrow { font-size: 0.75rem; font-weight: 700; color: #c94040; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .dispute-h1 { font-size: 1.5rem; font-weight: 700; color: #2c1f1a; margin-bottom: 4px; }
+    .dispute-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; }
+
+    .info-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        padding: 20px 22px;
+        margin-bottom: 18px;
+    }
+    .info-card h3 { font-size: 1rem; font-weight: 700; color: #2c1f1a; margin-bottom: 10px; }
+    .info-row { display: flex; gap: 18px; flex-wrap: wrap; font-size: 0.9rem; color: #2c1f1a; }
+    .info-row strong { color: #6f4533; }
+
+    .thread-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-light);
+        border-radius: 14px;
+        padding: 0;
+        overflow: hidden;
+    }
+    .thread-header { padding: 16px 20px; border-bottom: 1px solid var(--border-light); background: #fdf8f4; }
+    .thread-header h3 { margin: 0; font-size: 1rem; font-weight: 700; color: #2c1f1a; }
+    .thread-header .small { color: var(--text-muted); font-size: 0.8rem; }
+    .thread-body { padding: 16px 20px; max-height: 460px; overflow-y: auto; }
+    .thread-empty { text-align: center; color: var(--text-muted); padding: 28px 8px; font-size: 0.9rem; }
+
+    .msg { margin-bottom: 14px; display: flex; flex-direction: column; max-width: 78%; }
+    .msg--mine { margin-left: auto; align-items: flex-end; }
+    .msg-bubble { background: #f7efe7; border: 1px solid var(--border-light); border-radius: 12px; padding: 10px 14px; color: #2c1f1a; font-size: 0.92rem; line-height: 1.4; white-space: pre-wrap; word-break: break-word; }
+    .msg--mine .msg-bubble { background: #fdecdf; border-color: #f1cfb6; }
+    .msg-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 4px; }
+    .msg-image { display: block; margin-top: 8px; max-width: 280px; max-height: 200px; border-radius: 8px; }
+
+    .compose-card { padding: 16px 20px; border-top: 1px solid var(--border-light); background: #fdf8f4; }
+    .compose-card textarea { min-height: 70px; }
+    .compose-actions { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+
+    .badge-status-open { background: #fff5cc; color: #8c6b00; }
+    .badge-status-review { background: #d6edf7; color: #0f5a72; }
+    .badge-status-resolved { background: #d8f0dc; color: #1d6b32; }
+    .badge-status-dismissed { background: #ece6df; color: #6b5a4c; }
+    .status-pill { padding: 4px 10px; border-radius: 999px; font-size: 0.78rem; font-weight: 700; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dispute-shell">
+    <p class="dispute-eyebrow"><i class="bi bi-exclamation-octagon-fill"></i> Dispute</p>
+    <h1 class="dispute-h1">{{ contract.proposal.request.title }}</h1>
+    <p class="dispute-sub">
+        <a href="{% url 'progress:contract_detail_view' contract.id %}" class="text-decoration-none">
+            <i class="bi bi-arrow-left"></i> Back to project
+        </a>
+    </p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mb-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="info-card">
+        <h3>Dispute summary</h3>
+        <div class="info-row">
+            <span>
+                <strong>Status:</strong>
+                {% if dispute.status == 'open' %}
+                    <span class="status-pill badge-status-open">Open</span>
+                {% elif dispute.status == 'in_review' %}
+                    <span class="status-pill badge-status-review">Under Review</span>
+                {% elif dispute.status == 'resolved' %}
+                    <span class="status-pill badge-status-resolved">Resolved</span>
+                {% elif dispute.status == 'dismissed' %}
+                    <span class="status-pill badge-status-dismissed">Dismissed</span>
+                {% endif %}
+            </span>
+            <span><strong>Reason:</strong> {{ dispute.get_reason_display }}</span>
+            <span><strong>Opened by:</strong> {{ dispute.opened_by.username|default:"[deleted]" }}</span>
+            <span><strong>Opened:</strong> {{ dispute.created_at|date:"M j, Y · g:i a" }}</span>
+            {% if other_party %}<span><strong>Other party:</strong> {{ other_party.username }}</span>{% endif %}
+        </div>
+        <hr style="margin:14px 0;border-color:var(--border-light);">
+        <p style="margin:0;color:#2c1f1a;white-space:pre-wrap;">{{ dispute.description }}</p>
+        {% if dispute.resolved_at %}
+            <hr style="margin:14px 0;border-color:var(--border-light);">
+            <div style="font-size:0.85rem;color:#1d6b32;">
+                <strong>Resolution ({{ dispute.resolved_at|date:"M j, Y" }}):</strong>
+                {{ dispute.resolution_note|default:"No note provided." }}
+            </div>
+        {% endif %}
+    </div>
+
+    <div class="thread-card">
+        <div class="thread-header">
+            <h3><i class="bi bi-chat-square-text-fill"></i> Your private channel with staff</h3>
+            <p class="small mb-0">Only you and the moderation team can see these messages. The other party has their own separate channel.</p>
+        </div>
+        <div class="thread-body">
+            {% if thread %}
+                {% for msg in thread %}
+                    <div class="msg {% if msg.sender == request.user %}msg--mine{% endif %}">
+                        <div class="msg-bubble">{{ msg.body }}
+                            {% if msg.image %}<a href="{{ msg.image.url }}" target="_blank"><img class="msg-image" src="{{ msg.image.url }}" alt="attachment"></a>{% endif %}
+                        </div>
+                        <div class="msg-meta">
+                            {% if msg.sender == request.user %}You{% elif msg.sender.is_staff %}Staff — {{ msg.sender.username }}{% else %}{{ msg.sender.username }}{% endif %}
+                            · {{ msg.created_at|date:"M j · g:i a" }}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <div class="thread-empty">
+                    No messages yet. Send the first one or wait for staff to reach out.
+                </div>
+            {% endif %}
+        </div>
+        {% if dispute.is_open %}
+        <form class="compose-card" method="post" action="{% url 'dispute:party_send_message_view' dispute.id %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            {{ message_form.body }}
+            <div class="compose-actions">
+                <label class="text-muted small mb-0">
+                    <i class="bi bi-paperclip"></i> Optional image:
+                    {{ message_form.image }}
+                </label>
+                <button type="submit" class="btn btn-saaf-primary">
+                    <i class="bi bi-send"></i> Send
+                </button>
+            </div>
+        </form>
+        {% else %}
+        <div class="compose-card text-center text-muted small">
+            This dispute is closed. You can no longer send messages.
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

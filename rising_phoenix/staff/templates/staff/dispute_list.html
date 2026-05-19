@@ -1,0 +1,89 @@
+{% extends "main/base.html" %}
+
+{% block title %}Dispute Management{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="fw-bold">Dispute Management</h1>
+            <p class="text-muted">Review and resolve disputes between requesters and artisans.</p>
+        </div>
+        <a href="{% url 'staff:staff_dashboard_view' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Dashboard
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="d-flex gap-2 mb-4">
+        {% for value, label in status_choices %}
+        <a href="?status={{ value }}"
+           class="btn btn-sm {% if status_filter == value %}btn-dark{% else %}btn-outline-secondary{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">
+                Disputes
+                <span class="badge bg-secondary ms-2">{{ disputes.count }}</span>
+            </h5>
+        </div>
+
+        <div class="table-responsive">
+            {% if disputes %}
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Project</th>
+                        <th>Opened by</th>
+                        <th>Requester</th>
+                        <th>Artisan</th>
+                        <th>Reason</th>
+                        <th>Opened</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dispute in disputes %}
+                    <tr>
+                        <td>
+                            <strong>{{ dispute.contract.proposal.request.title }}</strong>
+                            <div class="text-muted" style="font-size:0.8rem;">Contract #{{ dispute.contract.id }}</div>
+                        </td>
+                        <td>{{ dispute.opened_by.username|default:"[deleted]" }}</td>
+                        <td>{{ dispute.contract.requester.username }}</td>
+                        <td>{{ dispute.contract.artisan.username }}</td>
+                        <td>{{ dispute.get_reason_display }}</td>
+                        <td class="text-muted" style="white-space:nowrap;">{{ dispute.created_at|date:"M j, Y" }}</td>
+                        <td>
+                            <a href="{% url 'staff:dispute_detail_view' dispute.id %}" class="btn btn-sm btn-outline-dark">
+                                Open
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-shield-check fs-1 d-block mb-3" style="color:#d9b9a8;"></i>
+                No disputes with status "{{ status_filter }}".
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

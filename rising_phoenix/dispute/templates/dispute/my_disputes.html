@@ -1,0 +1,91 @@
+{% extends "main/base.html" %}
+
+{% block title %}My Disputes{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #c96f52;
+        --light-bg: #faf3ec;
+        --card-bg: #fff;
+        --text-muted: #8b7461;
+        --border-light: #efe6dd;
+    }
+
+    body { background: var(--light-bg); }
+    .page-shell { max-width: 960px; margin: 40px auto; padding: 0 16px; }
+    .page-eyebrow { font-size: 0.75rem; font-weight: 700; color: #c94040; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+    .page-title { font-size: 1.6rem; font-weight: 700; color: #2c1f1a; margin-bottom: 4px; }
+    .page-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+    .dispute-card { background: var(--card-bg); border: 1px solid var(--border-light); border-radius: 16px; overflow: hidden; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+    .empty-state i { font-size: 3rem; margin-bottom: 16px; display: block; color: #d9b9a8; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-shell">
+    <p class="page-eyebrow"><i class="bi bi-exclamation-octagon-fill"></i> My Activity</p>
+    <h1 class="page-title">My Disputes</h1>
+    <p class="page-sub">Disputes you have opened or are a party to, with their current status.</p>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show mb-3" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="dispute-card">
+        {% if disputes %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Project</th>
+                        <th>Opened by</th>
+                        <th>Reason</th>
+                        <th>Status</th>
+                        <th>Opened</th>
+                        <th>Resolution note</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for dispute in disputes %}
+                    <tr>
+                        <td><strong>{{ dispute.contract.proposal.request.title }}</strong></td>
+                        <td>{{ dispute.opened_by.username|default:"[deleted]" }}</td>
+                        <td>{{ dispute.get_reason_display }}</td>
+                        <td>
+                            {% if dispute.status == 'open' %}
+                                <span class="badge bg-warning text-dark">Open</span>
+                            {% elif dispute.status == 'in_review' %}
+                                <span class="badge bg-info text-dark">Under Review</span>
+                            {% elif dispute.status == 'resolved' %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% elif dispute.status == 'dismissed' %}
+                                <span class="badge bg-secondary">Dismissed</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-muted" style="white-space:nowrap;">{{ dispute.created_at|date:"M j, Y" }}</td>
+                        <td class="text-muted" style="font-size:0.875rem;">{{ dispute.resolution_note|default:"—"|truncatechars:80 }}</td>
+                        <td>
+                            <a href="{% url 'dispute:dispute_detail_view' dispute.id %}" class="btn btn-sm btn-outline-dark">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-exclamation-octagon"></i>
+            <p class="mb-0">You have no disputes.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

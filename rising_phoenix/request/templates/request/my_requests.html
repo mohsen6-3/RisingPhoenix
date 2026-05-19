@@ -1,0 +1,182 @@
+{% extends 'main/base.html' %}
+{% load static %}
+
+{% block title %}My Requests{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/request.css' %}">
+<link rel="stylesheet" href="{% static 'css/proposal.css' %}">
+{% endblock %}
+
+{% block sidebar %}
+{% include 'main/_sidebar.html' with active='my_requests' %}
+{% endblock %}
+
+{% block content %}
+<section class="request-shell">
+  <div class="request-container">
+    <header class="request-hero request-hero--row">
+      <div>
+        <p class="request-eyebrow">Requester Dashboard</p>
+        <h1 class="mb-2">My Requests</h1>
+        <p class="request-sub">All the custom requests you have posted.</p>
+      </div>
+      <a href="{% url 'request:request_create_view' %}" class="request-action request-hero-cta">+ Post a Request</a>
+    </header>
+
+    {% if page_obj.object_list %}
+      <div class="proposal-list">
+        {% for req in page_obj %}
+          <div class="proposal-card proposal-card--req-{{ req.status }}">
+            <div class="proposal-card-head">
+              <div>
+                <p class="proposal-card-request-title">
+                  <a href="{% url 'request:request_detail_view' req.id %}">{{ req.title }}</a>
+                </p>
+                <p class="proposal-card-meta">
+                  {{ req.category.name }}
+                  {% if req.deadline %}&bull; Due {{ req.deadline|date:"N j, Y" }}{% endif %}
+                </p>
+              </div>
+              {% if req.status == 'open' %}
+                <span class="proposal-status-pill proposal-status-pill--accepted">Open</span>
+              {% elif req.status == 'in_review' %}
+                <span class="proposal-status-pill proposal-status-pill--pending">In Review</span>
+              {% elif req.status == 'closed' %}
+                <span class="proposal-status-pill proposal-status-pill--in-progress">Closed</span>
+              {% elif req.status == 'time_ended' %}
+                <span class="proposal-status-pill proposal-status-pill--withdrawn">Time Ended</span>
+              {% else %}
+                <span class="proposal-status-pill proposal-status-pill--withdrawn">{{ req.get_status_display }}</span>
+              {% endif %}
+            </div>
+
+            <div class="proposal-card-body">
+              <div class="proposal-card-stat">
+                <span class="proposal-stat-label">Budget</span>
+                <span class="proposal-stat-value">
+                  {% if req.budget_min and req.budget_max %}
+                    {{ req.budget_min|floatformat:"-2" }}–{{ req.budget_max|floatformat:"-2" }} SAR
+                  {% elif req.budget_max %}
+                    Up to {{ req.budget_max|floatformat:"-2" }} SAR
+                  {% else %}
+                    Flexible
+                  {% endif %}
+                </span>
+              </div>
+              <div class="proposal-card-stat">
+                <span class="proposal-stat-label">Proposals</span>
+                <span class="proposal-stat-value">{{ req.proposal_count }}</span>
+              </div>
+              <div class="proposal-card-stat">
+                <span class="proposal-stat-label">Posted</span>
+                <span class="proposal-stat-value">{{ req.created_at|date:"N j, Y" }}</span>
+              </div>
+            </div>
+
+            <p class="proposal-card-message">{{ req.description|truncatewords:30 }}</p>
+
+            {% with imgs=req.images.all %}
+              {% if imgs %}
+                <div class="proposal-card-gallery">
+                  {% for img in imgs %}
+                    <img src="{{ img.image.url }}" alt="Reference image {{ forloop.counter }}"
+                      class="proposal-gallery-thumb" title="{{ img.caption }}">
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <div class="proposal-card-actions">
+              <a href="{% url 'request:request_detail_view' req.id %}" class="proposal-action-btn">
+                <i class="bi bi-eye"></i> View
+              </a>
+              {% if req.status != 'closed' and req.status != 'time_ended' %}
+                <a href="{% url 'request:request_edit_view' req.id %}" class="proposal-action-btn">
+                  <i class="bi bi-pencil"></i> Edit
+                </a>
+              {% endif %}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+      {% if page_obj.has_other_pages %}
+        <div class="proposal-pagination-wrap">
+          <p class="proposal-pagination-count">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} request{{ page_obj.paginator.count|pluralize }}
+          </p>
+          <nav aria-label="My requests pagination">
+            <ul class="pagination align-items-center flex-wrap gap-1 mb-0">
+
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page=1" title="First page">
+                    <i class="bi bi-chevron-double-left"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="bi bi-chevron-left me-1"></i> Previous
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link"><i class="bi bi-chevron-double-left"></i></span>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link"><i class="bi bi-chevron-left me-1"></i> Previous</span>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link proposal-page-link proposal-page-current">{{ num }}</span>
+                  </li>
+                {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                  <li class="page-item">
+                    <a class="page-link proposal-page-link" href="?page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              <li class="page-item disabled">
+                <span class="page-link proposal-page-link proposal-page-status">of {{ page_obj.paginator.num_pages }}</span>
+              </li>
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page={{ page_obj.next_page_number }}">
+                    Next <i class="bi bi-chevron-right ms-1"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page={{ page_obj.paginator.num_pages }}" title="Last page">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link">Next <i class="bi bi-chevron-right ms-1"></i></span>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link"><i class="bi bi-chevron-double-right"></i></span>
+                </li>
+              {% endif %}
+
+            </ul>
+          </nav>
+        </div>
+      {% endif %}
+
+    {% else %}
+      <div class="request-detail-card page-empty-state">
+        <i class="bi bi-file-text page-empty-state-icon"></i>
+        <p class="page-empty-state-text">You have not posted any requests yet.</p>
+        <a href="{% url 'request:request_create_view' %}" class="request-action">Post a Request</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

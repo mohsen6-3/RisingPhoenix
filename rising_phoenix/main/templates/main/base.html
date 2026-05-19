@@ -75,6 +75,9 @@
                             </li>
                         {% else %}
                             <li class="nav-item">
+                                <a class="nav-link saaf-nav-link" href="{% url 'request:my_requests_view' %}">{% if LANGUAGE_CODE == 'ar' %}طلباتي{% else %}My Requests{% endif %}</a>
+                            </li>
+                            <li class="nav-item">
                                 <a class="nav-link saaf-nav-link" href="{% url 'request:request_create_view' %}">{% if LANGUAGE_CODE == 'ar' %}أضف طلبًا{% else %}Post a Request{% endif %}</a>
                             </li>
                         {% endif %}

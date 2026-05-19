@@ -28,32 +28,61 @@
         Agreed price: <strong>{{ contract.proposal.price|floatformat:"-2" }} SAR</strong> &bull;
         Timeline: <strong>{{ contract.proposal.estimated_days }} day{{ contract.proposal.estimated_days|pluralize }}</strong>
       </p>
-      <div class="progress-header-actions">
-        <a href="{% url 'request:request_detail_view' contract.proposal.request.id %}" class="proposal-action-btn">
-          <i class="bi bi-arrow-left"></i> Back to Request
-        </a>
-        {% if contract.proposal.conversation %}
-          <a href="{% url 'message:conversation_detail_view' contract.proposal.conversation.id %}" class="proposal-action-btn proposal-action-btn--chat">
-            <i class="bi bi-chat-dots-fill"></i> Open Chat
+      <div class="progress-header-actions progress-header-actions--split">
+        <div class="progress-header-nav">
+          <a href="{% url 'request:request_detail_view' contract.proposal.request.id %}" class="proposal-action-btn">
+            <i class="bi bi-arrow-left"></i> Back to Request
           </a>
-        {% elif is_requester %}
-          <a href="{% url 'message:start_conversation_view' contract.proposal.id %}" class="proposal-action-btn proposal-action-btn--chat">
-            <i class="bi bi-chat-dots-fill"></i> Start Chat
-          </a>
-        {% endif %}
-        {% if is_artisan and not contract.is_completed %}
-          <a href="#artisan-action-form" class="proposal-action-btn">
-            <i class="bi bi-arrow-down"></i> Post Update
-          </a>
-        {% endif %}
-        {% if is_requester and not contract.is_completed %}
-          <a href="#requester-action-form" class="proposal-action-btn">
-            <i class="bi bi-arrow-down"></i>
-            {% if contract.is_completion_requested %}Send Back{% else %}Give Feedback{% endif %}
+        </div>
+        <div class="progress-header-role-actions">
+          {% if contract.proposal.conversation %}
+            <a href="{% url 'message:conversation_detail_view' contract.proposal.conversation.id %}" class="proposal-action-btn proposal-action-btn--chat">
+              <i class="bi bi-chat-dots-fill"></i> Open Chat
+            </a>
+          {% elif is_requester %}
+            <a href="{% url 'message:start_conversation_view' contract.proposal.id %}" class="proposal-action-btn proposal-action-btn--chat">
+              <i class="bi bi-chat-dots-fill"></i> Start Chat
+            </a>
+          {% endif %}
+          {% if is_artisan and not contract.is_completed %}
+            <a href="#artisan-action-form" class="proposal-action-btn">
+              <i class="bi bi-pencil-square"></i> Post Update
+            </a>
+          {% endif %}
+          {% if is_requester and not contract.is_completed %}
+            <a href="#requester-action-form" class="proposal-action-btn">
+              <i class="bi bi-chat-square-text"></i>
+              {% if contract.is_completion_requested %}Send Back{% else %}Give Feedback{% endif %}
+            </a>
+          {% endif %}
+          {% if can_raise_dispute %}
+            <a href="{% url 'dispute:raise_dispute_view' contract.id %}"
+               class="proposal-action-btn proposal-action-btn--danger">
+              <i class="bi bi-exclamation-octagon"></i> Raise a Dispute
+            </a>
+          {% elif my_open_dispute %}
+            <a href="{% url 'dispute:dispute_detail_view' my_open_dispute.id %}"
+               class="proposal-action-btn">
+              <i class="bi bi-exclamation-octagon-fill"></i> View My Dispute
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+
+    {# ── Open dispute banner ── #}
+    {% if contract.has_open_dispute %}
+      <div class="progress-completion-banner" style="background:#fdecea;border-color:#f5c2c0;color:#8a1f1a;">
+        <i class="bi bi-exclamation-octagon-fill"></i>
+        A dispute is open on this project. Completion actions are paused until staff resolves it.
+        {% if my_open_dispute %}
+          <a href="{% url 'dispute:dispute_detail_view' my_open_dispute.id %}"
+             class="proposal-action-btn progress-banner-action" style="margin-left:12px;">
+            View My Dispute
           </a>
         {% endif %}
       </div>
-    </header>
+    {% endif %}
 
     {# ── Completion banner ── #}
     {% if contract.is_completed %}
@@ -62,12 +91,12 @@
         Project completed on {{ contract.completed_at|date:"N j, Y" }}.
         {% if is_requester %}
           {% if contract.proposal.request.review %}
-            <span style="margin-left:1rem; color:#27ae60;">
+            <span class="progress-review-submitted">
               <i class="bi bi-check-lg"></i> Review submitted
             </span>
           {% else %}
             <a href="{% url 'account:submit_review_view' contract.id %}"
-               class="proposal-action-btn proposal-action-btn--accept" style="margin-left:1rem;">
+               class="proposal-action-btn proposal-action-btn--accept progress-banner-action">
               <i class="bi bi-star-fill"></i> Leave a Review
             </a>
           {% endif %}
@@ -131,7 +160,7 @@
                         </div>
                         {% with cimgs=comment.images.all %}
                           {% if cimgs %}
-                            <div class="progress-image-gallery" style="margin-top:0.4rem;">
+                            <div class="progress-image-gallery progress-comment-gallery">
                               {% for img in cimgs %}
                                 <div class="progress-gallery-item">
                                   <button type="button" class="progress-gallery-btn"
@@ -177,7 +206,7 @@
 
                 {% with imgs=event.images.all %}
                   {% if imgs %}
-                    <div class="progress-image-gallery" style="margin-top:0.75rem;">
+                    <div class="progress-image-gallery progress-event-gallery">
                       {% for img in imgs %}
                         <div class="progress-gallery-item">
                           <button type="button" class="progress-gallery-btn"
@@ -219,14 +248,14 @@
     {% if is_artisan and not contract.is_completed %}
       <div class="progress-post-card" id="artisan-action-form">
         <div class="progress-post-top">
-          <h2 class="progress-section-title" style="margin-bottom:0;">Post an Update</h2>
+          <h2 class="progress-section-title progress-section-title--flush">Post an Update</h2>
         </div>
         <form id="artisan-form" method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <textarea name="body" class="progress-textarea" rows="3"
-            placeholder="Describe your progress or what you've completed..."></textarea>
+            placeholder="Describe your progress... (optional if adding images)"></textarea>
 
-          <label class="request-label" style="margin-top:0.75rem;">Images (optional)</label>
+          <label class="request-label progress-upload-label" for="id_artisan_images">Images (optional)</label>
           <div class="img-upload-zone" id="artisan-img-upload-zone">
             <input type="file" id="id_artisan_images" name="images"
                    class="img-upload-input" accept="image/*" multiple>
@@ -241,7 +270,7 @@
               formaction="{% url 'progress:post_update_view' contract.id %}">
               <i class="bi bi-send"></i> Post Update
             </button>
-            {% if contract.is_in_progress %}
+            {% if contract.is_in_progress and not contract.has_open_dispute %}
               <button type="submit" class="proposal-action-btn proposal-action-btn--accept"
                 formaction="{% url 'progress:request_completion_view' contract.id %}"
                 formnovalidate
@@ -261,10 +290,10 @@
       <div class="progress-action-card" id="requester-action-form">
 
         {# Confirm complete — separate prominent form #}
-        {% if contract.is_completion_requested %}
+        {% if contract.is_completion_requested and not contract.has_open_dispute %}
           <div class="progress-confirm-row">
             <div>
-              <p class="progress-action-hint" style="margin-bottom:0.5rem;">
+              <p class="progress-action-hint">
                 <i class="bi bi-hourglass-split"></i>
                 <strong>{{ contract.artisan.username }}</strong> has marked this project as complete.
               </p>
@@ -290,9 +319,9 @@
         <form id="requester-form" method="post" enctype="multipart/form-data">
           {% csrf_token %}
           <textarea name="body" class="progress-textarea" rows="3"
-            placeholder="{% if contract.is_completion_requested %}Describe what needs to be fixed or leave a note...{% else %}Leave your feedback...{% endif %}"></textarea>
+            placeholder="{% if contract.is_completion_requested %}Describe what needs to be fixed... (optional if adding images){% else %}Leave your feedback... (optional if adding images){% endif %}"></textarea>
 
-          <label class="request-label" style="margin-top:0.75rem;">Images (optional)</label>
+          <label class="request-label progress-upload-label" for="id_requester_images">Images (optional)</label>
           <div class="img-upload-zone" id="requester-img-upload-zone">
             <input type="file" id="id_requester_images" name="images"
                    class="img-upload-input" accept="image/*" multiple>
@@ -302,7 +331,7 @@
           <p id="requester-img-count-badge" class="img-count-badge" hidden></p>
           <div id="requester-img-preview-grid" class="img-preview-grid" hidden></div>
 
-          <div class="progress-artisan-actions" style="margin-top:0.75rem;">
+          <div class="progress-artisan-actions">
             {% if latest_update_id %}
               <button type="submit" class="request-action"
                 formaction="{% url 'progress:add_comment_view' latest_update_id %}">
@@ -364,7 +393,7 @@
 {% endif %}
 
 {# ── Lightbox ── #}
-<div id="progressLightbox" class="gallery-lightbox" style="display:none;" role="dialog" aria-modal="true">
+<div id="progressLightbox" class="gallery-lightbox" hidden role="dialog" aria-modal="true">
   <button class="gallery-lightbox-close" id="progressLightboxClose" aria-label="Close">&times;</button>
   <div class="gallery-lightbox-body">
     <img id="progressLightboxImg" src="" alt="">
@@ -382,12 +411,12 @@
     btn.addEventListener('click', function() {
       document.getElementById('progressLightboxImg').src = btn.dataset.src;
       document.getElementById('progressLightboxCaption').textContent = btn.dataset.caption || '';
-      document.getElementById('progressLightbox').style.display = 'flex';
+      document.getElementById('progressLightbox').removeAttribute('hidden');
     });
   });
   var lb = document.getElementById('progressLightbox');
-  document.getElementById('progressLightboxClose').addEventListener('click', function() { lb.style.display = 'none'; });
-  lb.addEventListener('click', function(e) { if (e.target === lb) lb.style.display = 'none'; });
-  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && lb.style.display !== 'none') lb.style.display = 'none'; });
+  document.getElementById('progressLightboxClose').addEventListener('click', function() { lb.setAttribute('hidden', ''); });
+  lb.addEventListener('click', function(e) { if (e.target === lb) lb.setAttribute('hidden', ''); });
+  document.addEventListener('keydown', function(e) { if (e.key === 'Escape' && !lb.hasAttribute('hidden')) lb.setAttribute('hidden', ''); });
 </script>
 {% endblock %}

@@ -41,9 +41,9 @@
         {% if active == 'dashboard' %}<span class="sidebar-active-indicator"></span>{% endif %}
     </a>
 
-    <a href="{% url 'request:request_list_view' %}" class="sidebar-btn {% if active == 'requests' %}sidebar-btn-active{% endif %}" aria-label="{% if LANGUAGE_CODE == 'ar' %}طلباتي{% else %}My Requests{% endif %}" title="{% if LANGUAGE_CODE == 'ar' %}طلباتي{% else %}My Requests{% endif %}">
+    <a href="{% url 'request:my_requests_view' %}" class="sidebar-btn {% if active == 'my_requests' %}sidebar-btn-active{% endif %}" aria-label="{% if LANGUAGE_CODE == 'ar' %}طلباتي{% else %}My Requests{% endif %}" title="{% if LANGUAGE_CODE == 'ar' %}طلباتي{% else %}My Requests{% endif %}">
         <i class="bi bi-file-text"></i>
-        {% if active == 'requests' %}<span class="sidebar-active-indicator"></span>{% endif %}
+        {% if active == 'my_requests' %}<span class="sidebar-active-indicator"></span>{% endif %}
     </a>
 
     <a href="{% url 'message:conversation_list_view' %}" class="sidebar-btn {% if active == 'messages' %}sidebar-btn-active{% endif %}" aria-label="{% if LANGUAGE_CODE == 'ar' %}الرسائل{% else %}Messages{% endif %}" title="{% if LANGUAGE_CODE == 'ar' %}الرسائل{% else %}Messages{% endif %}">

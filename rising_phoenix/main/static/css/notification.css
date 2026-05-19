@@ -1,26 +1,11 @@
 /* ── Notification list page ── */
 
-.notif-page-header {
+.notif-hero-row {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
     gap: 0.75rem;
-    margin-bottom: 2rem;
-}
-
-.notif-page-title {
-    font-family: 'Inter', sans-serif;
-    font-size: 1.8rem;
-    color: var(--ink, #1c1712);
-    margin: 0;
-    font-weight: 700;
-}
-
-.notif-page-meta {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.25rem;
 }
 
 .notif-count-label {
@@ -335,6 +320,22 @@
     justify-content: flex-end;
 }
 
+.notif-page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.notif-settings-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
 .notif-save-btn {
     background: var(--clay, #c2724f);
     color: var(--saaf-white, #FFF8F0);
@@ -345,6 +346,11 @@
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
+}
+
+.notif-save-btn--top {
+    padding: 0.5rem 1.25rem;
+    font-size: 0.85rem;
 }
 
 .notif-save-btn:hover { background: var(--saaf-btn-hover, #A95E49); }
@@ -366,4 +372,96 @@
 [data-theme="dark"] .notif-slider,
 [data-theme="dark"] .notif-master-slider {
     background: rgba(245, 230, 211, 0.28);
+}
+
+/* ── Pagination ── */
+.notif-pagination-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0 0.5rem;
+    border-top: 1px solid var(--saaf-border, rgba(107, 72, 38, 0.14));
+    margin-top: 0.5rem;
+}
+
+.notif-pagination-count {
+    font-size: 0.8rem;
+    color: var(--saaf-text-muted, #8B6841);
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.notif-page-link {
+    border: none !important;
+    border-radius: 999px !important;
+    padding: 0.5rem 1rem !important;
+    min-width: 42px;
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--saaf-brown, #6B4826) !important;
+    background-color: var(--saaf-bg, #F1E8D5) !important;
+    transition: background 0.18s, color 0.18s, transform 0.15s, box-shadow 0.15s;
+}
+
+.notif-page-link:hover {
+    background-color: var(--saaf-btn, #C77A5C) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(199, 122, 92, 0.28);
+}
+
+.page-item.active .notif-page-current {
+    background: var(--saaf-btn, #C77A5C) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 14px rgba(199, 122, 92, 0.35);
+}
+
+.page-item.disabled .notif-page-link {
+    color: var(--saaf-text-muted, #8B6841) !important;
+    opacity: 0.45;
+    background-color: var(--saaf-bg, #F1E8D5) !important;
+    cursor: default;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.notif-page-status {
+    background-color: transparent !important;
+    color: var(--saaf-text-muted, #8B6841) !important;
+    font-weight: 500;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .notif-pagination-wrap {
+    border-top-color: rgba(232, 199, 164, 0.15);
+}
+
+[data-theme="dark"] .notif-pagination-count {
+    color: var(--saaf-cream-text, #F2E4D1);
+    opacity: 0.6;
+}
+
+[data-theme="dark"] .notif-page-link {
+    background-color: rgba(201, 183, 159, 0.12) !important;
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .notif-page-link:hover {
+    background-color: var(--saaf-btn, #C77A5C) !important;
+    color: #fff !important;
+}
+
+[data-theme="dark"] .page-item.active .notif-page-current {
+    background: var(--saaf-btn, #C77A5C) !important;
+}
+
+[data-theme="dark"] .page-item.disabled .notif-page-link {
+    background-color: rgba(201, 183, 159, 0.06) !important;
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .notif-page-status {
+    color: var(--saaf-cream-text, #F2E4D1) !important;
 }

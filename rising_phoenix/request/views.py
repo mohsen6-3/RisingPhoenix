@@ -201,6 +201,22 @@ def request_list_view(request: HttpRequest):
     return render(request, 'request/request_list.html', context)
 
 
+@login_required
+def my_requests_view(request: HttpRequest):
+    _refresh_time_based_statuses()
+    qs = (
+        Request.objects
+        .filter(requester=request.user)
+        .select_related('category')
+        .prefetch_related('images')
+        .annotate(proposal_count=Count('proposals'))
+        .order_by('-created_at')
+    )
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'request/my_requests.html', {'page_obj': page_obj})
+
+
 def suggested_artisans_view(request: HttpRequest):
     category_id = request.GET.get('category_id', '').strip()
     if not category_id.isdigit():
@@ -208,7 +224,12 @@ def suggested_artisans_view(request: HttpRequest):
 
     workshops = (
         WorkshopProfile.objects.select_related('artisan__user')
-        .filter(is_published=True, categories__id=int(category_id))
+        .filter(
+            is_published=True,
+            categories__id=int(category_id),
+            artisan__is_banned=False,
+        )
+        .order_by('-artisan__is_verified', '-artisan__average_rating', '-id')
         .distinct()[:6]
     )
 
@@ -220,11 +241,23 @@ def suggested_artisans_view(request: HttpRequest):
                 'tagline': workshop.tagline,
                 'location': workshop.location,
                 'artisan_username': workshop.artisan.user.username,
+                'artisan_user_id': workshop.artisan.user_id,
                 'workshop_url': reverse('workshop:workshop_detail_view', args=[workshop.artisan.user_id]),
             }
         )
 
     return JsonResponse({'artisans': artisans})
+
+
+@login_required
+def my_open_requests_view(request: HttpRequest):
+    """Return the current user's OPEN requests as JSON (used by the workshop invite modal)."""
+    open_requests = (
+        Request.objects.filter(requester=request.user, status=Request.Status.OPEN)
+        .order_by('-created_at')
+        .values('id', 'title')
+    )
+    return JsonResponse({'requests': list(open_requests)})
 
 
 def request_detail_view(request: HttpRequest, request_id: int):
@@ -246,12 +279,23 @@ def request_detail_view(request: HttpRequest, request_id: int):
         messages.error(request, 'This request is not available.')
         return redirect('request:request_list_view')
 
+    invitations = []
     if is_requester:
         proposals = list(
             project_request.proposals.select_related('artisan', 'contract').prefetch_related('images').order_by('-created_at')
         )
+        invitations = list(
+            project_request.invitations.select_related('artisan').order_by('-created_at')
+        )
     elif is_artisan:
         user_proposal = project_request.proposals.select_related('contract').prefetch_related('images').filter(artisan=request.user).first()
+        # Mark any pending invitation to this artisan as VIEWED.
+        from invitation.models import Invitation
+        Invitation.objects.filter(
+            request=project_request,
+            artisan=request.user,
+            status=Invitation.Status.PENDING,
+        ).update(status=Invitation.Status.VIEWED, viewed_at=timezone.now())
 
     can_submit = (
         is_artisan
@@ -269,6 +313,7 @@ def request_detail_view(request: HttpRequest, request_id: int):
         'is_requester': is_requester,
         'is_artisan': is_artisan,
         'can_submit': can_submit,
+        'invitations': invitations,
     })
 
 

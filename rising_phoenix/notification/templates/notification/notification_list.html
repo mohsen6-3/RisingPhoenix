@@ -4,25 +4,30 @@
 {% block title %}Notifications — Saaf{% endblock %}
 
 {% block extra_css %}
+<link href="{% static 'css/request.css' %}" rel="stylesheet">
 <link href="{% static 'css/notification.css' %}" rel="stylesheet">
 {% endblock %}
 
 {% block content %}
-<div class="container-lg py-5">
+<section class="request-shell">
+<div class="request-container">
 
-    <div class="notif-page-header">
-        <h2 class="notif-page-title">Notifications</h2>
-        <div class="notif-page-meta">
-            {% if unread_count %}
-                <span class="notif-count-label">{{ unread_count }} unread</span>
-            {% elif page_obj.paginator.count %}
-                <span class="notif-count-label">All caught up</span>
-            {% endif %}
+    <header class="request-hero">
+        <p class="request-eyebrow">Your Account</p>
+        <div class="notif-hero-row">
+            <h1 class="mb-0">Notifications</h1>
             <a href="{% url 'notification:notification_settings_view' %}" class="notif-settings-link" title="Notification settings">
                 <i class="bi bi-gear"></i>
             </a>
         </div>
-    </div>
+        <p class="request-sub">
+            {% if unread_count %}
+                {{ unread_count }} unread
+            {% elif page_obj.paginator.count %}
+                All caught up
+            {% endif %}
+        </p>
+    </header>
 
     {% if notifications %}
         <div class="notif-list">
@@ -48,15 +53,72 @@
         </div>
 
         {% if page_obj.has_other_pages %}
-            <nav class="browse-pagination" aria-label="Notifications pagination">
-                {% if page_obj.has_previous %}
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                {% endif %}
-                <span class="page-current">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                {% if page_obj.has_next %}
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                {% endif %}
-            </nav>
+            <div class="notif-pagination-wrap">
+                <p class="notif-pagination-count">
+                    Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} notification{{ page_obj.paginator.count|pluralize }}
+                </p>
+                <nav aria-label="Notifications pagination">
+                    <ul class="pagination align-items-center flex-wrap gap-1 mb-0">
+
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link notif-page-link" href="?page=1" title="First page">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link notif-page-link" href="?page={{ page_obj.previous_page_number }}">
+                                    <i class="bi bi-chevron-left me-1"></i> Previous
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link notif-page-link"><i class="bi bi-chevron-double-left"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link notif-page-link"><i class="bi bi-chevron-left me-1"></i> Previous</span>
+                            </li>
+                        {% endif %}
+
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active">
+                                    <span class="page-link notif-page-link notif-page-current">{{ num }}</span>
+                                </li>
+                            {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                                <li class="page-item">
+                                    <a class="page-link notif-page-link" href="?page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        <li class="page-item disabled">
+                            <span class="page-link notif-page-link notif-page-status">of {{ page_obj.paginator.num_pages }}</span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link notif-page-link" href="?page={{ page_obj.next_page_number }}">
+                                    Next <i class="bi bi-chevron-right ms-1"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link notif-page-link" href="?page={{ page_obj.paginator.num_pages }}" title="Last page">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link notif-page-link">Next <i class="bi bi-chevron-right ms-1"></i></span>
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link notif-page-link"><i class="bi bi-chevron-double-right"></i></span>
+                            </li>
+                        {% endif %}
+
+                    </ul>
+                </nav>
+            </div>
         {% endif %}
     {% else %}
         <div class="notif-empty">
@@ -66,6 +128,7 @@
     {% endif %}
 
 </div>
+</section>
 {% endblock %}
 
 {% block extra_js %}

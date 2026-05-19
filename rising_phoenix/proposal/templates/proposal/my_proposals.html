@@ -62,7 +62,7 @@
               </div>
             </div>
 
-            <p class="proposal-card-message">{{ proposal.message|truncatechars:200 }}</p>
+            <p class="proposal-card-message">{{ proposal.message|truncatewords:30 }}</p>
 
             {% with imgs=proposal.images.all %}
               {% if imgs %}
@@ -114,10 +114,81 @@
           </div>
         {% endfor %}
       </div>
+
+      {% if page_obj.has_other_pages %}
+        <div class="proposal-pagination-wrap">
+          <p class="proposal-pagination-count">
+            Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} proposal{{ page_obj.paginator.count|pluralize }}
+          </p>
+          <nav aria-label="Proposals pagination">
+            <ul class="pagination align-items-center flex-wrap gap-1 mb-0">
+
+              {% if page_obj.has_previous %}
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page=1" title="First page">
+                    <i class="bi bi-chevron-double-left"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="bi bi-chevron-left me-1"></i> Previous
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link"><i class="bi bi-chevron-double-left"></i></span>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link"><i class="bi bi-chevron-left me-1"></i> Previous</span>
+                </li>
+              {% endif %}
+
+              {% for num in page_obj.paginator.page_range %}
+                {% if page_obj.number == num %}
+                  <li class="page-item active">
+                    <span class="page-link proposal-page-link proposal-page-current">{{ num }}</span>
+                  </li>
+                {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                  <li class="page-item">
+                    <a class="page-link proposal-page-link" href="?page={{ num }}">{{ num }}</a>
+                  </li>
+                {% endif %}
+              {% endfor %}
+
+              <li class="page-item disabled">
+                <span class="page-link proposal-page-link proposal-page-status">of {{ page_obj.paginator.num_pages }}</span>
+              </li>
+
+              {% if page_obj.has_next %}
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page={{ page_obj.next_page_number }}">
+                    Next <i class="bi bi-chevron-right ms-1"></i>
+                  </a>
+                </li>
+                <li class="page-item">
+                  <a class="page-link proposal-page-link" href="?page={{ page_obj.paginator.num_pages }}" title="Last page">
+                    <i class="bi bi-chevron-double-right"></i>
+                  </a>
+                </li>
+              {% else %}
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link">Next <i class="bi bi-chevron-right ms-1"></i></span>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link proposal-page-link"><i class="bi bi-chevron-double-right"></i></span>
+                </li>
+              {% endif %}
+
+            </ul>
+          </nav>
+        </div>
+      {% endif %}
+
     {% else %}
-      <div class="request-detail-card" style="text-align:center; padding: 3rem;">
-        <p style="color: var(--ink-light); font-size: 1.1rem;">You have not submitted any proposals yet.</p>
-        <a href="{% url 'request:request_list_view' %}" class="request-action" style="display:inline-block; margin-top:1rem;">Browse requests</a>
+      <div class="request-detail-card page-empty-state">
+        <i class="bi bi-send page-empty-state-icon"></i>
+        <p class="page-empty-state-text">You have not submitted any proposals yet.</p>
+        <a href="{% url 'request:request_list_view' %}" class="request-action">Browse requests</a>
       </div>
     {% endif %}
   </div>

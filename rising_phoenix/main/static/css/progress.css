@@ -47,6 +47,19 @@
     margin-top: 1rem;
 }
 
+.progress-header-actions--split {
+    justify-content: space-between;
+    align-items: center;
+}
+
+.progress-header-nav,
+.progress-header-role-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 .proposal-action-btn--chat {
     background: var(--clay);
     color: var(--saaf-cream-text, #F2E4D1);
@@ -163,6 +176,27 @@
     margin-bottom: 1.5rem;
     font-weight: 700;
 }
+
+.progress-section-title--flush { margin-bottom: 0; }
+
+.progress-upload-label { margin-top: 0.75rem; display: block; }
+
+.progress-comment-gallery { margin-top: 0.4rem; }
+
+.progress-event-gallery { margin-top: 0.75rem; }
+
+.progress-review-submitted {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-left: 1rem;
+    color: #46623f;
+    font-size: 0.9rem;
+}
+
+.progress-banner-action { margin-left: 1rem; }
+
+.progress-action-hint { margin-bottom: 0.5rem; }
 
 .progress-timeline {
     display: flex;
@@ -417,6 +451,19 @@
     color: #B4574D;
     font-size: 0.82rem;
     margin-top: 0.25rem;
+}
+
+/* Scroll targets — give breathing room when jumped from header buttons */
+#artisan-action-form,
+#requester-action-form {
+    scroll-margin-top: 1.5rem;
+}
+
+#artisan-action-form:target,
+#requester-action-form:target {
+    outline: 2px solid var(--clay);
+    outline-offset: 6px;
+    border-radius: 14px;
 }
 
 @media (max-width: 991px) {

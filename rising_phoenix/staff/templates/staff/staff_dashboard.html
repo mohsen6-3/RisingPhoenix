@@ -22,6 +22,10 @@
                             <i class="bi bi-flag"></i>
                             Review Reports
                         </a>
+                        <a href="{% url 'staff:dispute_list_view' %}" class="saaf-quick-action-btn">
+                            <i class="bi bi-exclamation-octagon"></i>
+                            Review Disputes
+                        </a>
                         <a href="{% url 'staff:staff_profile_view' %}" class="saaf-quick-action-btn saaf-quick-action-btn--soft">
                             <i class="bi bi-person-circle"></i>
                             My Staff Profile
@@ -64,6 +68,7 @@
             <div class="col-6 col-md-4 col-xl"><div class="saaf-info-card saaf-info-card--metric"><span class="saaf-info-label">Featured</span><h5 class="mb-0">{{ featured_artisans }}</h5><p class="mb-0 text-muted">Highlighted creators</p></div></div>
             <div class="col-6 col-md-4 col-xl"><div class="saaf-info-card saaf-info-card--metric"><span class="saaf-info-label">Banned Artisans</span><h5 class="mb-0">{{ banned_artisans }}</h5><p class="mb-0 text-muted">Restricted artisan accounts</p></div></div>
             <div class="col-12 col-md-6 col-xl"><div class="saaf-info-card saaf-info-card--metric saaf-info-card--alert"><span class="saaf-info-label">Pending Reports</span><h5 class="mb-1"><a href="{% url 'staff:report_list_view' %}" class="saaf-staff-inline-link">{{ pending_reports_count }}</a></h5><p class="mb-0 text-muted">Open moderation queue</p></div></div>
+            <div class="col-12 col-md-6 col-xl"><div class="saaf-info-card saaf-info-card--metric saaf-info-card--alert"><span class="saaf-info-label">Open Disputes</span><h5 class="mb-1"><a href="{% url 'staff:dispute_list_view' %}" class="saaf-staff-inline-link">{{ pending_disputes_count }}</a></h5><p class="mb-0 text-muted">Awaiting staff resolution</p></div></div>
         </div>
 
         <div class="saaf-dashboard-card saaf-staff-section-card rounded-4 p-4 mb-4">

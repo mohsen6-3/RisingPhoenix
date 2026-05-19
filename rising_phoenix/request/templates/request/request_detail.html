@@ -22,7 +22,7 @@
         <div>
           <p class="request-tag">{{ project_request.category.name }}</p>
           <h1 class="request-detail-title">{{ project_request.title }}</h1>
-          <p class="request-sub mb-0">Requested by {{ project_request.requester.username }}</p>
+          <p class="request-detail-by">Requested by {{ project_request.requester.username }}</p>
         </div>
         <div class="request-detail-actions">
           <a href="{% url 'request:request_list_view' %}" class="page-link">Back to browse</a>
@@ -30,7 +30,7 @@
             <a href="{% url 'request:request_edit_view' project_request.id %}" class="request-action">Edit request</a>
           {% endif %}
           {% if user.is_authenticated and user != project_request.requester %}
-            <a href="{% url 'account:submit_report_view' 'request' project_request.id %}" class="page-link text-danger" style="font-size:0.85rem;">
+            <a href="{% url 'account:submit_report_view' 'request' project_request.id %}" class="request-report-link">
               <i class="bi bi-flag"></i> Report
             </a>
           {% endif %}
@@ -72,29 +72,6 @@
         </div>
       </div>
 
-      <div class="request-detail-body">
-        <h2 class="request-detail-subtitle">Project Description</h2>
-        <p class="request-detail-description">{{ project_request.description|linebreaksbr }}</p>
-      </div>
-
-      {% if project_request.status == 'time_ended' %}
-        <div class="request-time-ended-note" role="status">
-          {% if project_request.deadline %}
-            This request was automatically marked as time ended because the deadline ({{ project_request.deadline }}) has passed.
-          {% else %}
-            This request has ended.
-          {% endif %}
-          {% if is_requester %}
-            <form method="post" action="{% url 'request:reopen_request_view' project_request.id %}" class="reopen-form">
-              {% csrf_token %}
-              <label for="new_deadline">Set a new deadline to reopen:</label>
-              <input type="date" name="new_deadline" id="new_deadline" class="request-input reopen-date-input" required>
-              <button type="submit" class="request-action reopen-btn">Reopen Request</button>
-            </form>
-          {% endif %}
-        </div>
-      {% endif %}
-
       {% if has_images %}
         <div class="request-detail-body">
           <h2 class="request-detail-subtitle">Reference Images</h2>
@@ -115,6 +92,29 @@
               </div>
             {% endfor %}
           </div>
+        </div>
+      {% endif %}
+
+      <div class="request-detail-body">
+        <h2 class="request-detail-subtitle">Project Description</h2>
+        <p class="request-detail-description">{{ project_request.description|linebreaksbr }}</p>
+      </div>
+
+      {% if project_request.status == 'time_ended' %}
+        <div class="request-time-ended-note" role="status">
+          {% if project_request.deadline %}
+            This request was automatically marked as time ended because the deadline ({{ project_request.deadline }}) has passed.
+          {% else %}
+            This request has ended.
+          {% endif %}
+          {% if is_requester %}
+            <form method="post" action="{% url 'request:reopen_request_view' project_request.id %}" class="reopen-form">
+              {% csrf_token %}
+              <label for="new_deadline">Set a new deadline to reopen:</label>
+              <input type="date" name="new_deadline" id="new_deadline" class="request-input reopen-date-input" required>
+              <button type="submit" class="request-action reopen-btn">Reopen Request</button>
+            </form>
+          {% endif %}
         </div>
       {% endif %}
     </div>
@@ -210,6 +210,15 @@
                 </div>
               {% endif %}
             {% endwith %}
+            {% if user_proposal.status == 'rejected' %}
+              <p class="proposal-card-status-note proposal-card-status-note--rejected">
+                <i class="bi bi-x-circle"></i> Your proposal was not selected for this project.
+              </p>
+            {% elif user_proposal.status == 'withdrawn' and project_request.status == 'closed' %}
+              <p class="proposal-card-status-note proposal-card-status-note--withdrawn">
+                <i class="bi bi-dash-circle"></i> You withdrew this proposal and the request has since closed.
+              </p>
+            {% endif %}
           </div>
 
         {% else %}
@@ -219,9 +228,44 @@
         {% endif %}
       {% endif %}
 
+      {# Requester: suggested artisans + invitations sent (only while OPEN) #}
+      {% if is_requester and project_request.status == 'open' %}
+        <div class="proposal-panel-header">
+          <h2 class="proposal-panel-title">Suggested artisans</h2>
+        </div>
+        <div class="suggested-artisans-list"
+             id="invite-suggested-list"
+             data-category-id="{{ project_request.category.id }}"
+             data-request-id="{{ project_request.id }}"
+             data-suggested-url="{% url 'request:suggested_artisans_view' %}"
+             data-invite-url="{% url 'invitation:send_invitation_view' %}">
+          <p class="suggested-empty">Loading suggestions…</p>
+        </div>
+
+        {% if invitations %}
+          <div class="proposal-panel-header" style="margin-top:1.25rem;">
+            <h2 class="proposal-panel-title">
+              Invitations sent
+              <span class="proposal-count-badge">{{ invitations|length }}</span>
+            </h2>
+          </div>
+          <ul class="invitations-sent-list" id="invitations-sent-list">
+            {% for invitation in invitations %}
+              <li class="invitation-row" data-artisan-id="{{ invitation.artisan_id }}">
+                <span class="invitation-name">{{ invitation.artisan.username }}</span>
+                <span class="invitation-status invitation-status--{{ invitation.status }}">
+                  {{ invitation.get_status_display }}
+                </span>
+                <span class="invitation-when">{{ invitation.created_at|date:"M j, Y" }}</span>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+      {% endif %}
+
       {# Requester: see all proposals #}
       {% if is_requester %}
-        <div class="proposal-panel-header">
+        <div class="proposal-panel-header" {% if project_request.status == 'open' %}style="margin-top:1.25rem;"{% endif %}>
           <h2 class="proposal-panel-title">
             Proposals
             <span class="proposal-count-badge">{{ proposals|length }}</span>
@@ -233,11 +277,11 @@
             {% for proposal in proposals %}
               <div class="proposal-card proposal-card--{{ proposal.status }}">
                 <div class="proposal-card-head">
-                  <div class="w-100">
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
+                  <div class="proposal-card-artisan-col">
+                    <div class="proposal-card-artisan-row">
                       <strong class="proposal-card-artisan">{{ proposal.artisan.username }}</strong>
 
-                      <div class="d-flex flex-wrap gap-2">
+                      <div class="proposal-card-artisan-actions">
                         {% if proposal.conversation %}
                           <a class="proposal-chat-btn" href="{% url 'message:conversation_detail_view' proposal.conversation.id %}">
                             <i class="bi bi-chat-dots-fill"></i>
@@ -300,16 +344,16 @@
                   <div class="proposal-card-actions">
                     <form method="post" action="{% url 'payment:proposal_checkout_view' proposal.id %}">
                       {% csrf_token %}
-                      <button type="submit" class="proposal-action-btn proposal-action-btn--accept"
+                      <button type="submit" class="proposal-action-btn proposal-action-btn--accept proposal-action-btn--filled"
                         data-confirm-title="Accept Proposal"
                         data-confirm-body="This will close the request and reject all other proposals. This cannot be undone."
                         data-confirm-variant="accept">
-                        Accept
+                        <i class="bi bi-check-lg"></i> Accept
                       </button>
                     </form>
                     <form method="post" action="{% url 'proposal:reject_proposal_view' proposal.id %}">
                       {% csrf_token %}
-                      <button type="submit" class="proposal-action-btn proposal-action-btn--danger"
+                      <button type="submit" class="proposal-action-btn proposal-action-btn--danger proposal-action-btn--outline"
                         data-confirm-title="Reject Proposal"
                         data-confirm-body="This proposal will be rejected and the artisan will be notified."
                         data-confirm-variant="danger">
@@ -376,6 +420,115 @@
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && !lightbox.hidden) closeLightbox();
   });
+})();
+
+// Suggested artisans + Invite flow (requester only, OPEN requests)
+(function () {
+  var container = document.getElementById('invite-suggested-list');
+  if (!container) return;
+
+  var categoryId = container.dataset.categoryId;
+  var requestId = container.dataset.requestId;
+  var suggestedUrl = container.dataset.suggestedUrl;
+  var inviteUrl = container.dataset.inviteUrl;
+
+  function getCsrf() {
+    var m = document.cookie.match(/(?:^|;\s*)csrftoken=([^;]+)/);
+    return m ? m[1] : '';
+  }
+
+  function escapeHtml(value) {
+    return String(value == null ? '' : value)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  var invitedIds = new Set();
+  document.querySelectorAll('#invitations-sent-list .invitation-row').forEach(function (row) {
+    if (row.dataset.artisanId) invitedIds.add(String(row.dataset.artisanId));
+  });
+
+  function renderCards(items) {
+    if (!items.length) {
+      container.innerHTML = '<p class="suggested-empty">No matching artisans found yet for this category.</p>';
+      return;
+    }
+    container.innerHTML = items.map(function (item) {
+      var tagline = item.tagline || 'Custom craft specialist';
+      var location = item.location || 'Location not specified';
+      var alreadyInvited = invitedIds.has(String(item.artisan_user_id));
+      var btn = alreadyInvited
+        ? '<button type="button" class="invite-btn invite-btn--done" disabled>Invited</button>'
+        : '<button type="button" class="invite-btn" data-artisan-id="' + escapeHtml(item.artisan_user_id) + '">Invite</button>';
+      return (
+        '<div class="suggested-card suggested-card--invite">' +
+          '<a href="' + escapeHtml(item.workshop_url) + '" class="suggested-card-link">' +
+            '<p class="suggested-name">' + escapeHtml(item.workshop_name) + '</p>' +
+            '<p class="suggested-by">by @' + escapeHtml(item.artisan_username) + '</p>' +
+            '<p class="suggested-tagline">' + escapeHtml(tagline) + '</p>' +
+            '<p class="suggested-location">' + escapeHtml(location) + '</p>' +
+          '</a>' +
+          btn +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  async function loadSuggestions() {
+    if (!categoryId) {
+      container.innerHTML = '<p class="suggested-empty">No category selected.</p>';
+      return;
+    }
+    try {
+      var resp = await fetch(suggestedUrl + '?category_id=' + encodeURIComponent(categoryId));
+      var data = await resp.json();
+      renderCards(data.artisans || []);
+    } catch (_) {
+      container.innerHTML = '<p class="suggested-empty">Could not load suggestions right now.</p>';
+    }
+  }
+
+  container.addEventListener('click', async function (e) {
+    var btn = e.target.closest('.invite-btn');
+    if (!btn || btn.disabled) return;
+    var artisanId = btn.dataset.artisanId;
+    if (!artisanId) return;
+    btn.disabled = true;
+    var originalText = btn.textContent;
+    btn.textContent = 'Sending…';
+
+    var body = new URLSearchParams();
+    body.append('request_id', requestId);
+    body.append('artisan_user_id', artisanId);
+
+    try {
+      var resp = await fetch(inviteUrl, {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': getCsrf(),
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+      });
+      var data = {};
+      try { data = await resp.json(); } catch (_) { /* ignore */ }
+      if (resp.ok || resp.status === 409) {
+        btn.textContent = 'Invited';
+        btn.classList.add('invite-btn--done');
+        invitedIds.add(String(artisanId));
+      } else {
+        btn.disabled = false;
+        btn.textContent = originalText;
+        alert(data.error ? 'Could not invite: ' + data.error : 'Could not send invitation.');
+      }
+    } catch (_) {
+      btn.disabled = false;
+      btn.textContent = originalText;
+      alert('Network error — please try again.');
+    }
+  });
+
+  loadSuggestions();
 })();
 </script>
 {% endblock %}

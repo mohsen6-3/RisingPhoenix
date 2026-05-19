@@ -225,47 +225,107 @@
     justify-content: center;
 }
 
+/* ── Request card image placeholder ── */
+.request-card-placeholder {
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: linear-gradient(145deg, #ede0cc, #ddd0b8);
+    border-bottom: 1px solid rgba(107, 72, 38, 0.1);
+}
+
+.request-card-placeholder-icon {
+    font-size: 2.2rem;
+    color: rgba(107, 72, 38, 0.35);
+    line-height: 1;
+}
+
+.request-card-placeholder-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba(107, 72, 38, 0.5);
+}
+
+[data-theme="dark"] .request-card-placeholder {
+    background: linear-gradient(145deg, #2a2019, #332720);
+    border-bottom-color: rgba(232, 199, 164, 0.08);
+}
+
+[data-theme="dark"] .request-card-placeholder-icon,
+[data-theme="dark"] .request-card-placeholder-label {
+    color: rgba(242, 228, 209, 0.3);
+}
+
 .pagination-wrap .pagination {
-    background: #fff;
+    background: transparent;
     padding: 0.75rem;
     border-radius: 1.25rem;
-    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
 .saaf-page-link {
     border: none;
     border-radius: 999px !important;
-    padding: 0.7rem 1rem;
-    min-width: 48px;
+    padding: 0.5rem 1rem;
+    min-width: 42px;
     text-align: center;
     font-weight: 600;
-    color: #23423a;
-    background-color: #f8faf9;
-    transition: all 0.2s ease;
+    color: var(--saaf-brown, #6B4826) !important;
+    background-color: var(--saaf-bg, #F1E8D5) !important;
+    transition: background 0.18s, color 0.18s, transform 0.15s, box-shadow 0.15s;
 }
 
 .saaf-page-link:hover {
-    color: #0f2e27;
-    background-color: #e8f3ef;
+    background-color: var(--saaf-btn, #C77A5C) !important;
+    color: #fff !important;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(199, 122, 92, 0.28);
 }
 
 .page-item.active .saaf-page-current {
-    color: #fff;
-    background: linear-gradient(135deg, #1f6f5f, #2e8b78);
-    box-shadow: 0 8px 18px rgba(31, 111, 95, 0.28);
+    background: var(--saaf-btn, #C77A5C) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 14px rgba(199, 122, 92, 0.35);
 }
 
 .page-item.disabled .saaf-page-link {
-    color: #a0a8a4;
-    background-color: #f3f5f4;
-    opacity: 1;
+    color: var(--saaf-text-muted, #8B6841) !important;
+    background-color: var(--saaf-bg, #F1E8D5) !important;
+    opacity: 0.45;
 }
 
 .saaf-page-status {
-    background-color: transparent;
-    color: #6c757d;
+    background-color: transparent !important;
+    color: var(--saaf-text-muted, #8B6841) !important;
     font-weight: 500;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .saaf-page-link {
+    background-color: rgba(201, 183, 159, 0.12) !important;
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .saaf-page-link:hover {
+    background-color: var(--saaf-btn, #C77A5C) !important;
+    color: #fff !important;
+}
+
+[data-theme="dark"] .page-item.active .saaf-page-current {
+    background: var(--saaf-btn, #C77A5C) !important;
+}
+
+[data-theme="dark"] .page-item.disabled .saaf-page-link {
+    background-color: rgba(201, 183, 159, 0.06) !important;
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .saaf-page-status {
+    color: var(--saaf-cream-text, #F2E4D1) !important;
 }
 
 @media (max-width: 576px) {

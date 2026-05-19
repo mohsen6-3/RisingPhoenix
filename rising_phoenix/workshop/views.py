@@ -326,7 +326,7 @@ def workshop_detail_view(request, artisan_id):
 
     paginator = Paginator(
         reviews_list,
-        3
+        6
     )
 
     page_number = request.GET.get(
@@ -339,25 +339,30 @@ def workshop_detail_view(request, artisan_id):
 
 
     # Closed requests linked to this artisan (same logic as account completed-orders page)
-    completed_orders = (
+    completed_orders_qs = (
         Request.objects.filter(
             status=Request.Status.CLOSED,
             proposals__artisan=artisan_profile.user,
             proposals__status=Proposal.Status.ACCEPTED,
         )
         .distinct()
-        .order_by('-created_at')[:3]
+        .order_by('-created_at')
     )
 
-    completed_orders_count = (
-        Request.objects.filter(
-            status=Request.Status.CLOSED,
-            proposals__artisan=artisan_profile.user,
-            proposals__status=Proposal.Status.ACCEPTED,
-        )
-        .distinct()
-        .count()
-    )    
+    closed_paginator = Paginator(
+        completed_orders_qs,
+        6
+    )
+
+    closed_page_number = request.GET.get(
+        'closed_page'
+    )
+
+    completed_orders = closed_paginator.get_page(
+        closed_page_number
+    )
+
+    completed_orders_count = completed_orders.paginator.count
 
     active_orders_count = Contract.objects.filter(
         proposal__artisan=artisan_profile.user,
@@ -365,7 +370,25 @@ def workshop_detail_view(request, artisan_id):
     ).count()
 
 
-    portfolio_images = workshop.portfolio_images.all()
+    portfolio_qs = workshop.portfolio_images.all()
+
+    portfolio_paginator = Paginator(
+        portfolio_qs,
+        6
+    )
+
+    portfolio_page_number = request.GET.get(
+        'portfolio_page'
+    )
+
+    portfolio_images = portfolio_paginator.get_page(
+        portfolio_page_number
+    )
+
+    is_viewer_artisan = (
+        request.user.is_authenticated
+        and request.user.groups.filter(name='artisan').exists()
+    )
 
     context = {
 
@@ -375,7 +398,7 @@ def workshop_detail_view(request, artisan_id):
         'portfolio_images':
         portfolio_images,
         'portfolio_images_count':
-        portfolio_images.count(),
+        portfolio_images.paginator.count,
 
         'can_edit_portfolio':
         can_edit_portfolio,
@@ -390,6 +413,8 @@ def workshop_detail_view(request, artisan_id):
         active_orders_count,
         'workshop_details': workshop_details,
         'detail_form': detail_form,
+
+        'is_viewer_artisan': is_viewer_artisan,
 
     }
 

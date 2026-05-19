@@ -9,7 +9,10 @@ from django.shortcuts import get_object_or_404
 from django.contrib import messages
 from django.db.models import Count
 from django.utils import timezone
+from django.urls import reverse
 import datetime
+import mimetypes
+from django.conf import settings
 from .models import Report, StaffProfile
 from .forms import ReportForm, StaffProfileForm
 
@@ -52,8 +55,14 @@ def staff_dashboard_view(request: HttpRequest):
         'featured_artisans': artisan_profiles.filter(is_featured=True).count(),
         'banned_artisans': artisan_profiles.filter(is_banned=True).count(),
         'pending_reports_count': Report.objects.filter(status=Report.Status.PENDING).count(),
+        'pending_disputes_count': _pending_disputes_count(),
     }
     return render(request, 'staff/staff_dashboard.html', context)
+
+
+def _pending_disputes_count():
+    from dispute.models import Dispute
+    return Dispute.objects.filter(status__in=[Dispute.Status.OPEN, Dispute.Status.IN_REVIEW]).count()
 
 
 @staff_required
@@ -331,3 +340,184 @@ def resolve_report_view(request: HttpRequest, report_id: int):
 
     messages.success(request, f'Report marked as {report.get_status_display()}.')
     return redirect('staff:report_list_view')
+
+
+# ── Dispute management (staff only) ──────────────────────────────────────────
+
+def _staff_validate_image(image_file):
+    if not image_file:
+        return None, None
+    allowed_types = list(getattr(settings, 'REQUEST_IMAGE_ALLOWED_TYPES', ['image/jpeg', 'image/png', 'image/webp', 'image/gif']))
+    max_size_bytes = int(float(getattr(settings, 'REQUEST_IMAGE_MAX_SIZE_MB', 5)) * 1024 * 1024)
+    from rising_phoenix.moderation import image_is_clean
+
+    if image_file.size > max_size_bytes:
+        return None, 'Image must be under 5 MB.'
+    ct = (getattr(image_file, 'content_type', '') or '').lower()
+    if not ct or ct == 'application/octet-stream':
+        ct = (mimetypes.guess_type(image_file.name)[0] or '').lower()
+    if ct not in allowed_types:
+        return None, 'Only JPEG, PNG, WebP, and GIF images are allowed.'
+    if not image_is_clean(image_file):
+        return None, 'Your image was rejected: explicit content detected.'
+    return image_file, None
+
+
+@staff_required
+def dispute_list_view(request: HttpRequest):
+    from dispute.models import Dispute
+    status_filter = request.GET.get('status', Dispute.Status.OPEN)
+    disputes = (
+        Dispute.objects
+        .filter(status=status_filter)
+        .select_related('contract__proposal__request', 'contract__proposal__artisan', 'opened_by')
+        .order_by('-created_at')
+    )
+    return render(request, 'staff/dispute_list.html', {
+        'disputes': disputes,
+        'status_filter': status_filter,
+        'status_choices': Dispute.Status.choices,
+    })
+
+
+@staff_required
+def dispute_detail_view(request: HttpRequest, dispute_id: int):
+    from dispute.models import Dispute, DisputeMessage
+    dispute = get_object_or_404(
+        Dispute.objects.select_related(
+            'contract__proposal__artisan',
+            'contract__proposal__request__requester',
+            'opened_by',
+            'resolved_by',
+        ),
+        id=dispute_id,
+    )
+
+    contract = dispute.contract
+    requester = contract.requester
+    artisan = contract.artisan
+
+    requester_thread = (
+        DisputeMessage.objects.filter(dispute=dispute, party=requester)
+        .select_related('sender').order_by('created_at')
+    )
+    artisan_thread = (
+        DisputeMessage.objects.filter(dispute=dispute, party=artisan)
+        .select_related('sender').order_by('created_at')
+    )
+
+    conversation = getattr(contract.proposal, 'conversation', None)
+    party_chat = conversation.messages.select_related('sender').order_by('created_at') if conversation else []
+
+    progress_updates = (
+        contract.updates
+        .prefetch_related('images', 'comments__author', 'comments__images')
+        .order_by('created_at')
+    )
+
+    return render(request, 'staff/dispute_detail.html', {
+        'dispute': dispute,
+        'contract': contract,
+        'requester': requester,
+        'artisan': artisan,
+        'requester_thread': requester_thread,
+        'artisan_thread': artisan_thread,
+        'party_chat': party_chat,
+        'progress_updates': progress_updates,
+    })
+
+
+@staff_required
+@require_POST
+def staff_dispute_message_view(request: HttpRequest, dispute_id: int, party_id: int):
+    from dispute.models import Dispute, DisputeMessage
+    from notification.models import Notification
+    from notification.utils import notify
+    from rising_phoenix.moderation import text_is_clean
+
+    dispute = get_object_or_404(Dispute, id=dispute_id)
+
+    if not dispute.is_open:
+        messages.error(request, 'This dispute is already resolved.')
+        return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+
+    contract = dispute.contract
+    if party_id == contract.requester.id:
+        party = contract.requester
+    elif party_id == contract.artisan.id:
+        party = contract.artisan
+    else:
+        messages.error(request, 'That user is not a party to this dispute.')
+        return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+
+    body = (request.POST.get('body') or '').strip()
+    image = request.FILES.get('image')
+
+    if not body and not image:
+        messages.error(request, 'Please write a message or attach an image.')
+        return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+    if body and not text_is_clean(body):
+        messages.error(request, 'Your message contains inappropriate language. Please revise it.')
+        return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+
+    cleaned_image, image_error = _staff_validate_image(image)
+    if image_error:
+        messages.error(request, image_error)
+        return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+
+    DisputeMessage.objects.create(
+        dispute=dispute,
+        party=party,
+        sender=request.user,
+        body=body,
+        image=cleaned_image,
+    )
+
+    notify(
+        party,
+        Notification.NotifType.DISPUTE_MESSAGE_RECEIVED,
+        'New message from the staff on your dispute',
+        body=body[:120] if body else 'Sent an image',
+        link=reverse('dispute:dispute_detail_view', kwargs={'dispute_id': dispute.id}),
+    )
+
+    messages.success(request, f'Message sent to {party.username}.')
+    return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+
+
+@staff_required
+@require_POST
+def resolve_dispute_view(request: HttpRequest, dispute_id: int):
+    from dispute.models import Dispute
+    from notification.models import Notification
+    from notification.utils import notify
+
+    dispute = get_object_or_404(Dispute, id=dispute_id)
+    action = request.POST.get('action', '')
+    resolution_note = (request.POST.get('resolution_note') or '').strip()
+
+    if action not in (Dispute.Status.IN_REVIEW, Dispute.Status.RESOLVED, Dispute.Status.DISMISSED):
+        messages.error(request, 'Invalid action.')
+        return redirect('staff:dispute_detail_view', dispute_id=dispute.id)
+
+    dispute.status = action
+    dispute.resolution_note = resolution_note
+    if action in (Dispute.Status.RESOLVED, Dispute.Status.DISMISSED):
+        dispute.resolved_by = request.user
+        dispute.resolved_at = timezone.now()
+    dispute.save()
+
+    contract = dispute.contract
+    status_label = dispute.get_status_display()
+    link = reverse('dispute:dispute_detail_view', kwargs={'dispute_id': dispute.id})
+    for party in (contract.requester, contract.artisan):
+        notify(
+            party,
+            Notification.NotifType.DISPUTE_STATUS_UPDATE,
+            f'Your dispute has been {status_label.lower()}',
+            body=resolution_note or 'The moderation team has updated your dispute status.',
+            link=link,
+        )
+
+    messages.success(request, f'Dispute marked as {status_label}.')
+    return redirect('staff:dispute_list_view')

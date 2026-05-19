@@ -15,5 +15,10 @@ urlpatterns = [
     # Report management (staff only)
     path("reports/", views.report_list_view, name="report_list_view"),
     path("reports/<int:report_id>/resolve/", views.resolve_report_view, name="resolve_report_view"),
+    # Dispute management (staff only)
+    path("disputes/", views.dispute_list_view, name="dispute_list_view"),
+    path("disputes/<int:dispute_id>/", views.dispute_detail_view, name="dispute_detail_view"),
+    path("disputes/<int:dispute_id>/message/<int:party_id>/", views.staff_dispute_message_view, name="staff_dispute_message_view"),
+    path("disputes/<int:dispute_id>/resolve/", views.resolve_dispute_view, name="resolve_dispute_view"),
 ]
 

@@ -4,6 +4,7 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
 from django.db import IntegrityError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -307,11 +308,13 @@ def my_proposals_view(request):
         messages.error(request, 'Only artisans have proposals.')
         return redirect('main:home_view')
 
-    proposals = (
+    qs = (
         Proposal.objects.filter(artisan=request.user)
         .select_related('request', 'request__category', 'request__requester', 'contract')
         .prefetch_related('images')
         .order_by('-created_at')
     )
-    return render(request, 'proposal/my_proposals.html', {'proposals': proposals})
+    paginator = Paginator(qs, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'proposal/my_proposals.html', {'proposals': page_obj, 'page_obj': page_obj})
 

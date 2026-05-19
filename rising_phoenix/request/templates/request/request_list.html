@@ -121,6 +121,11 @@
                             {% with project_request.images.first as cover %}
                             {% if cover %}
                             <img src="{{ cover.image.url }}" alt="{{ project_request.title }}" class="w-100" style="height: 200px; object-fit: cover;">
+                            {% else %}
+                            <div class="request-card-placeholder">
+                                <i class="bi bi-box-seam request-card-placeholder-icon"></i>
+                                <span class="request-card-placeholder-label">{{ project_request.category.name }}</span>
+                            </div>
                             {% endif %}
                             {% endwith %}
 
@@ -140,7 +145,7 @@
 
                                 <h5 class="fw-bold mb-2">{{ project_request.title|truncatechars:60 }}</h5>
                                 <p class="text-muted small mb-2">by {{ project_request.requester.username }}</p>
-                                <p class="text-muted small mb-3">{{ project_request.description|truncatechars:110 }}</p>
+                                <p class="text-muted small mb-3">{{ project_request.description|truncatewords:16 }}</p>
 
                                 <div class="d-flex justify-content-between align-items-center small text-muted mb-3">
                                     <span>
@@ -176,8 +181,12 @@
                 {% endif %}
 
                 {% if page_obj.has_other_pages %}
-                <nav class="pagination-wrap mt-5" aria-label="Requests pages">
-                    <ul class="pagination justify-content-center align-items-center flex-wrap gap-2 mb-0">
+                <div class="proposal-pagination-wrap mt-4">
+                    <p class="proposal-pagination-count">
+                        Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} request{{ page_obj.paginator.count|pluralize }}
+                    </p>
+                <nav aria-label="Requests pages">
+                    <ul class="pagination align-items-center flex-wrap gap-1 mb-0">
                         {% if page_obj.has_previous %}
                         <li class="page-item">
                             <a class="page-link saaf-page-link" href="?q={{ current_q|urlencode }}&category={{ current_category|urlencode }}&status={{ current_status|urlencode }}&sort={{ current_sort|urlencode }}&mine={{ current_mine|urlencode }}&page=1">
@@ -194,9 +203,17 @@
                         <li class="page-item disabled"><span class="page-link saaf-page-link"><i class="bi bi-chevron-left me-1"></i> Previous</span></li>
                         {% endif %}
 
-                        <li class="page-item active" aria-current="page">
-                            <span class="page-link saaf-page-link saaf-page-current">{{ page_obj.number }}</span>
-                        </li>
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link saaf-page-link saaf-page-current">{{ num }}</span>
+                                </li>
+                            {% elif num >= page_obj.number|add:"-2" and num <= page_obj.number|add:"2" %}
+                                <li class="page-item">
+                                    <a class="page-link saaf-page-link" href="?q={{ current_q|urlencode }}&category={{ current_category|urlencode }}&status={{ current_status|urlencode }}&sort={{ current_sort|urlencode }}&mine={{ current_mine|urlencode }}&page={{ num }}">{{ num }}</a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
                         <li class="page-item disabled d-none d-md-block">
                             <span class="page-link saaf-page-link saaf-page-status">of {{ page_obj.paginator.num_pages }}</span>
                         </li>
@@ -218,6 +235,7 @@
                         {% endif %}
                     </ul>
                 </nav>
+                </div>
                 {% endif %}
             </div>
         </div>

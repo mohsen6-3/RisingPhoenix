@@ -22,7 +22,6 @@
 <section
   class="request-shell"
   data-refine-url="{% url 'request:refine_request_view' %}"
-  data-suggested-artisans-url="{% url 'request:suggested_artisans_view' %}"
 >
   <div class="request-form-wrap">
     <header class="request-hero">
@@ -97,13 +96,6 @@
             {{ form.category }}
             {% for error in form.category.errors %}<p class="request-error">{{ error }}</p>{% endfor %}
           </div>
-
-          {% if not edit_mode %}
-            <div class="field-full" id="suggested-artisans-panel" hidden>
-              <p class="request-label">Suggested artisans for this category</p>
-              <div id="suggested-artisans-list" class="suggested-artisans-list"></div>
-            </div>
-          {% endif %}
 
           <div>
             <label class="request-label" for="{{ form.deadline.id_for_label }}">Deadline</label>

@@ -253,14 +253,19 @@
 
 .proposal-card-artisan {
     font-size: 1rem;
-    color: var(--ink, #1c1712);
+    color: var(--ink, #6B4826);
     margin: 0 0 0.4rem;
+}
+
+/* reset browser default <p> margin on title wrapper */
+.proposal-card-request-title {
+    margin: 0 0 0.2rem;
 }
 
 .proposal-card-request-title a {
     font-size: 1rem;
     font-weight: 600;
-    color: var(--ink, #1c1712);
+    color: var(--ink, #6B4826);
     text-decoration: none;
 }
 
@@ -270,8 +275,8 @@
 
 .proposal-card-meta {
     font-size: 0.8rem;
-    color: var(--ink-light, #8c7b6b);
-    margin: 0.2rem 0 0;
+    color: var(--ink-light, #8B6841);
+    margin: 0;
 }
 
 .proposal-card-stats-row {
@@ -281,11 +286,34 @@
     margin-top: 0.25rem;
 }
 
+.proposal-card-artisan-col {
+    flex: 1;
+    min-width: 0;
+}
+
+.proposal-card-artisan-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.proposal-card-artisan-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
 .proposal-card-body {
     display: flex;
     flex-wrap: wrap;
     gap: 1.5rem;
-    margin-bottom: 0.75rem;
+    border-top: 1px solid var(--border, #d8ccba);
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+    margin-bottom: 0.5rem;
 }
 
 .proposal-card-stat {
@@ -298,28 +326,30 @@
     font-size: 0.7rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--ink-light, #8c7b6b);
+    color: var(--ink-light, #8B6841);
     font-weight: 700;
 }
 
 .proposal-stat-value {
     font-size: 0.95rem;
     font-weight: 600;
-    color: var(--ink, #1c1712);
+    color: var(--ink, #6B4826);
 }
 
 .proposal-card-message {
     font-size: 0.9rem;
-    color: var(--ink-mid, #4a3f33);
+    color: var(--ink-mid, #6f5436);
     line-height: 1.65;
-    margin: 0.5rem 0 0;
+    margin: 0;
     white-space: pre-line;
 }
 
 .proposal-card-actions {
     display: flex;
     gap: 0.6rem;
-    margin-top: 1rem;
+    margin-top: 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border, #d8ccba);
     flex-wrap: wrap;
 }
 
@@ -402,6 +432,27 @@
     color: var(--saaf-cream-text, #F2E4D1);
 }
 
+/* Filled dominant accept — used on requester Accept action */
+.proposal-action-btn--filled {
+    background: #4a7c59;
+    color: var(--saaf-cream-text, #F2E4D1);
+    border-color: #4a7c59;
+    font-weight: 700;
+    padding: 0.55rem 1.25rem;
+}
+
+.proposal-action-btn--filled:hover {
+    background: #3a6349;
+    border-color: #3a6349;
+    color: var(--saaf-cream-text, #F2E4D1);
+}
+
+/* Outline-only danger — secondary/destructive actions */
+.proposal-action-btn--outline {
+    background: transparent;
+    font-weight: 500;
+}
+
 .proposal-action-btn--danger {
     border-color: #842029;
     color: #842029;
@@ -410,6 +461,30 @@
 .proposal-action-btn--danger:hover {
     background: #842029;
     color: var(--saaf-cream-text, #F2E4D1);
+}
+
+/* ── Proposal card status notes (artisan view) ── */
+.proposal-card-status-note {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.83rem;
+    font-weight: 500;
+    margin-top: 0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+}
+
+.proposal-card-status-note--rejected {
+    background: rgba(132, 32, 41, 0.08);
+    color: #842029;
+    border: 1px solid rgba(132, 32, 41, 0.18);
+}
+
+.proposal-card-status-note--withdrawn {
+    background: rgba(107, 72, 38, 0.07);
+    color: var(--ink-light, #8B6841);
+    border: 1px solid var(--border);
 }
 
 /* ── Form extras ── */
@@ -496,6 +571,51 @@
     padding: 1.5rem 0;
 }
 
+/* ── My Requests status card modifiers ── */
+.proposal-card--req-closed {
+    opacity: 0.6;
+}
+
+.proposal-card--req-time_ended {
+    opacity: 0.55;
+}
+
+.proposal-card--req-in_review {
+    border-color: #c2724f;
+    background: #fdf6f2;
+}
+
+[data-theme="dark"] .proposal-card--req-in_review {
+    background: linear-gradient(154deg, rgba(194, 114, 79, 0.12), rgba(42, 32, 25, 0.96));
+    border-color: rgba(194, 114, 79, 0.4);
+}
+
+/* ── Shared empty state ── */
+.page-empty-state {
+    text-align: center;
+    padding: 3.5rem 2rem;
+}
+
+.page-empty-state-icon {
+    font-size: 2.4rem;
+    color: var(--ink-light, #8B6841);
+    opacity: 0.4;
+    display: block;
+    margin-bottom: 1rem;
+    line-height: 1;
+}
+
+.page-empty-state-text {
+    color: var(--ink-light, #8B6841);
+    font-size: 1rem;
+    margin: 0 0 1.25rem;
+}
+
+[data-theme="dark"] .page-empty-state-icon,
+[data-theme="dark"] .page-empty-state-text {
+    color: var(--saaf-cream-text, #F2E4D1);
+}
+
 .proposal-cta-box {
     background: var(--sand-dark, #eae0cc);
     border: 1px solid var(--border, #d8ccba);
@@ -533,6 +653,11 @@
     color: #e0e0e0;
 }
 
+[data-theme="dark"] .proposal-card-body,
+[data-theme="dark"] .proposal-card-actions {
+    border-color: var(--saaf-border, rgba(232, 199, 164, 0.15));
+}
+
 [data-theme="dark"] .proposal-status-pill--pending {
     background: rgba(212, 139, 104, 0.2);
     color: var(--saaf-cream-text, #F2E4D1);
@@ -551,4 +676,96 @@
 [data-theme="dark"] .proposal-status-pill--withdrawn {
     background: rgba(201, 183, 159, 0.16);
     color: var(--saaf-cream-text, #F2E4D1);
+}
+
+/* ── Pagination ── */
+.proposal-pagination-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0 0.5rem;
+    border-top: 1px solid var(--border, rgba(107, 72, 38, 0.14));
+    margin-top: 0.5rem;
+}
+
+.proposal-pagination-count {
+    font-size: 0.8rem;
+    color: var(--ink-light, #8B6841);
+    margin: 0;
+    letter-spacing: 0.02em;
+}
+
+.proposal-page-link {
+    border: none !important;
+    border-radius: 999px !important;
+    padding: 0.5rem 1rem !important;
+    min-width: 42px;
+    text-align: center;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--ink, #6B4826) !important;
+    background-color: var(--sand, #F1E8D5) !important;
+    transition: background 0.18s, color 0.18s, transform 0.15s, box-shadow 0.15s;
+}
+
+.proposal-page-link:hover {
+    background-color: var(--clay, #C77A5C) !important;
+    color: #fff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(199, 122, 92, 0.28);
+}
+
+.page-item.active .proposal-page-current {
+    background: var(--clay, #C77A5C) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 14px rgba(199, 122, 92, 0.35);
+}
+
+.page-item.disabled .proposal-page-link {
+    color: var(--ink-light, #8B6841) !important;
+    opacity: 0.45;
+    background-color: var(--sand, #F1E8D5) !important;
+    cursor: default;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.proposal-page-status {
+    background-color: transparent !important;
+    color: var(--ink-light, #8B6841) !important;
+    font-weight: 500;
+    opacity: 1 !important;
+}
+
+[data-theme="dark"] .proposal-pagination-wrap {
+    border-top-color: rgba(232, 199, 164, 0.15);
+}
+
+[data-theme="dark"] .proposal-pagination-count {
+    color: var(--saaf-cream-text, #F2E4D1);
+    opacity: 0.6;
+}
+
+[data-theme="dark"] .proposal-page-link {
+    background-color: rgba(201, 183, 159, 0.12) !important;
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .proposal-page-link:hover {
+    background-color: var(--clay, #C77A5C) !important;
+    color: #fff !important;
+}
+
+[data-theme="dark"] .page-item.active .proposal-page-current {
+    background: var(--clay, #C77A5C) !important;
+}
+
+[data-theme="dark"] .page-item.disabled .proposal-page-link {
+    background-color: rgba(201, 183, 159, 0.06) !important;
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .proposal-page-status {
+    color: var(--saaf-cream-text, #F2E4D1) !important;
 }

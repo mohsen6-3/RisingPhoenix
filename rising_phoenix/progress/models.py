@@ -53,6 +53,13 @@ class Contract(models.Model):
     def requester(self):
         return self.proposal.request.requester
 
+    @property
+    def has_open_dispute(self):
+        from dispute.models import Dispute
+        return self.disputes.filter(
+            status__in=[Dispute.Status.OPEN, Dispute.Status.IN_REVIEW]
+        ).exists()
+
 
 class ProgressUpdate(models.Model):
     contract   = models.ForeignKey(Contract, on_delete=models.CASCADE, related_name='updates')

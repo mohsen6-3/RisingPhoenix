@@ -3,7 +3,6 @@
 
   var shell = document.querySelector('.request-shell');
   var refineUrl = shell ? shell.dataset.refineUrl : '';
-  var suggestedArtisansUrl = shell ? shell.dataset.suggestedArtisansUrl : '';
 
   function getCsrfToken() {
     var input = document.querySelector('input[name="csrfmiddlewaretoken"]');
@@ -593,54 +592,6 @@
     cancelBtn.addEventListener('click', closeEditor);
     editorCloseBtn.addEventListener('click', closeEditor);
     editorModal.addEventListener('click', function (e) { if (e.target === editorModal) closeEditor(); });
-  })();
-
-  // Suggested artisans block
-  (function () {
-    var categoryInput = document.getElementById('id_category');
-    var panel = document.getElementById('suggested-artisans-panel');
-    var list = document.getElementById('suggested-artisans-list');
-
-    if (!categoryInput || !panel || !list || !suggestedArtisansUrl) return;
-
-    function renderCards(items) {
-      if (!items.length) {
-        list.innerHTML = '<p class="suggested-empty">No matching artisans found yet for this category.</p>';
-        panel.hidden = false;
-        return;
-      }
-      list.innerHTML = items
-        .map(function (item) {
-          var tagline = item.tagline || 'Custom craft specialist';
-          var location = item.location || 'Location not specified';
-          return (
-            '<a class="suggested-card" href="' + escapeHtml(item.workshop_url) + '">' +
-              '<p class="suggested-name">' + escapeHtml(item.workshop_name) + '</p>' +
-              '<p class="suggested-by">by @' + escapeHtml(item.artisan_username) + '</p>' +
-              '<p class="suggested-tagline">' + escapeHtml(tagline) + '</p>' +
-              '<p class="suggested-location">' + escapeHtml(location) + '</p>' +
-            '</a>'
-          );
-        })
-        .join('');
-      panel.hidden = false;
-    }
-
-    async function loadSuggestions() {
-      var categoryId = categoryInput.value;
-      if (!categoryId) { panel.hidden = true; return; }
-      try {
-        var response = await fetch(suggestedArtisansUrl + '?category_id=' + encodeURIComponent(categoryId));
-        var data = await response.json();
-        renderCards(data.artisans || []);
-      } catch (_) {
-        list.innerHTML = '<p class="suggested-empty">Could not load suggestions right now.</p>';
-        panel.hidden = false;
-      }
-    }
-
-    categoryInput.addEventListener('change', loadSuggestions);
-    loadSuggestions();
   })();
 
   // Double-submit protection + client-side required field validation

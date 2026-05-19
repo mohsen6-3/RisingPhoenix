@@ -7,7 +7,8 @@ _NOTIF_TYPES = [
     'proposal_received', 'proposal_accepted', 'proposal_rejected',
     'progress_update', 'comment_added', 'completion_requested',
     'completion_confirmed', 'completion_rejected', 'message_received',
-    'report_received', 'report_status_update',
+    'report_received', 'report_status_update', 'invitation_received',
+    'dispute_received', 'dispute_message_received', 'dispute_status_update',
 ]
 
 
@@ -24,6 +25,10 @@ class NotificationPreference(models.Model):
     email_completion_confirmed = models.BooleanField(default=True)
     email_completion_rejected  = models.BooleanField(default=True)
     email_message_received     = models.BooleanField(default=True)
+    email_invitation_received  = models.BooleanField(default=True)
+    email_dispute_received        = models.BooleanField(default=True)
+    email_dispute_message_received = models.BooleanField(default=True)
+    email_dispute_status_update    = models.BooleanField(default=True)
 
     # In-site toggles
     insite_proposal_received    = models.BooleanField(default=True)
@@ -35,6 +40,10 @@ class NotificationPreference(models.Model):
     insite_completion_confirmed = models.BooleanField(default=True)
     insite_completion_rejected  = models.BooleanField(default=True)
     insite_message_received     = models.BooleanField(default=True)
+    insite_invitation_received  = models.BooleanField(default=True)
+    insite_dispute_received        = models.BooleanField(default=True)
+    insite_dispute_message_received = models.BooleanField(default=True)
+    insite_dispute_status_update    = models.BooleanField(default=True)
 
     def wants_email(self, notif_type):
         return getattr(self, f'email_{notif_type}', True)
@@ -56,6 +65,10 @@ class Notification(models.Model):
         MESSAGE_RECEIVED     = 'message_received',     'New Message'
         REPORT_RECEIVED      = 'report_received',      'New Report'
         REPORT_STATUS_UPDATE = 'report_status_update', 'Report Update'
+        INVITATION_RECEIVED  = 'invitation_received',  'Project Invitation'
+        DISPUTE_RECEIVED         = 'dispute_received',         'New Dispute'
+        DISPUTE_MESSAGE_RECEIVED = 'dispute_message_received', 'New Dispute Message'
+        DISPUTE_STATUS_UPDATE    = 'dispute_status_update',    'Dispute Update'
 
     recipient  = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
     notif_type = models.CharField(max_length=30, choices=NotifType.choices)
@@ -85,6 +98,10 @@ class Notification(models.Model):
             'message_received':     'bi-chat-fill',
             'report_received':      'bi-flag-fill',
             'report_status_update': 'bi-shield-check',
+            'invitation_received':  'bi-person-plus-fill',
+            'dispute_received':         'bi-exclamation-octagon-fill',
+            'dispute_message_received': 'bi-chat-square-text-fill',
+            'dispute_status_update':    'bi-shield-check',
         }.get(self.notif_type, 'bi-bell')
 
     @property
@@ -101,4 +118,8 @@ class Notification(models.Model):
             'message_received':     '#1a6fa8',
             'report_received':      '#c2374f',
             'report_status_update': '#1a7a4a',
+            'invitation_received':  '#1a6fa8',
+            'dispute_received':         '#c2374f',
+            'dispute_message_received': '#c2724f',
+            'dispute_status_update':    '#1a7a4a',
         }.get(self.notif_type, '#8a7a6e')

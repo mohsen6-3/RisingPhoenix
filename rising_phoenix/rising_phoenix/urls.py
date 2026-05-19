@@ -37,4 +37,6 @@ urlpatterns = [
     path('message/', include('message.urls')),
     path('progress/', include('progress.urls')),
     path('notifications/', include('notification.urls')),
+    path('invitations/', include('invitation.urls')),
+    path('disputes/', include('dispute.urls')),
 ] + static(settings.MEDIA_URL, document_root = settings.MEDIA_ROOT)

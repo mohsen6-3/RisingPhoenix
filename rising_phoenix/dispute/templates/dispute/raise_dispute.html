@@ -1,0 +1,118 @@
+{% extends "main/base.html" %}
+
+{% block title %}Raise a Dispute{% endblock %}
+
+{% block extra_css %}
+<style>
+    :root {
+        --primary: #c96f52;
+        --light-bg: #faf3ec;
+        --card-bg: #fff;
+        --text-muted: #8b7461;
+        --border-light: #efe6dd;
+    }
+
+    body { background: var(--light-bg); }
+
+    .dispute-shell { max-width: 680px; margin: 40px auto; padding: 0 16px; }
+
+    .dispute-card {
+        background: var(--card-bg);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 36px 40px;
+    }
+
+    .dispute-eyebrow {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #c94040;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 8px;
+    }
+
+    .dispute-title { font-size: 1.4rem; font-weight: 700; color: #2c1f1a; margin-bottom: 4px; }
+    .dispute-sub { color: var(--text-muted); font-size: 0.9rem; margin-bottom: 28px; }
+
+    .target-box {
+        background: #fdf8f4;
+        border: 1px solid var(--border-light);
+        border-radius: 10px;
+        padding: 14px 16px;
+        margin-bottom: 24px;
+        font-size: 0.9rem;
+        color: #2c1f1a;
+    }
+
+    .dispute-label { display: block; font-weight: 700; color: #2c1f1a; margin-bottom: 8px; font-size: 0.95rem; }
+    .dispute-actions { display: flex; gap: 12px; margin-top: 24px; }
+
+    .btn-submit {
+        background: #c94040;
+        color: #fff;
+        padding: 12px 28px;
+        border-radius: 8px;
+        border: none;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .btn-submit:hover { background: #a83232; }
+
+    .btn-cancel {
+        background: #fff;
+        color: var(--text-muted);
+        padding: 12px 20px;
+        border-radius: 8px;
+        border: 1px solid var(--border-light);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        transition: background 0.15s;
+    }
+    .btn-cancel:hover { background: #f7efe7; color: #2c1f1a; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dispute-shell">
+    <div class="dispute-card">
+        <p class="dispute-eyebrow"><i class="bi bi-exclamation-octagon-fill"></i> Raise a Dispute</p>
+        <h1 class="dispute-title">Open a dispute on this project</h1>
+        <p class="dispute-sub">
+            Our staff will review the conversation and progress, message you and the other party privately,
+            and resolve the issue. Completion actions on this project are paused while a dispute is open.
+        </p>
+
+        <div class="target-box">
+            <strong>Project:</strong> {{ contract.proposal.request.title }}<br>
+            <strong>Requester:</strong> {{ contract.requester.username }} &middot;
+            <strong>Artisan:</strong> {{ contract.artisan.username }}<br>
+            <strong>Status:</strong> {{ contract.get_status_display }}
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <label class="dispute-label" for="{{ form.reason.id_for_label }}">{{ form.reason.label }}</label>
+            {{ form.reason }}
+            {% if form.reason.errors %}<div class="text-danger small mt-1">{{ form.reason.errors }}</div>{% endif %}
+
+            <label class="dispute-label mt-3" for="{{ form.description.id_for_label }}">{{ form.description.label }}</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="text-danger small mt-1">{{ form.description.errors }}</div>{% endif %}
+
+            <div class="dispute-actions">
+                <button type="submit" class="btn-submit">
+                    <i class="bi bi-exclamation-octagon-fill"></i> Open Dispute
+                </button>
+                <a href="{% url 'progress:contract_detail_view' contract.id %}" class="btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

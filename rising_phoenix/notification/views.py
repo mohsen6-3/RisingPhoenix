@@ -10,9 +10,13 @@ _PREF_FIELDS = [
     'email_proposal_received', 'email_proposal_accepted', 'email_proposal_rejected',
     'email_progress_update', 'email_comment_added', 'email_completion_requested',
     'email_completion_confirmed', 'email_completion_rejected', 'email_message_received',
+    'email_invitation_received',
+    'email_dispute_received', 'email_dispute_message_received', 'email_dispute_status_update',
     'insite_proposal_received', 'insite_proposal_accepted', 'insite_proposal_rejected',
     'insite_progress_update', 'insite_comment_added', 'insite_completion_requested',
     'insite_completion_confirmed', 'insite_completion_rejected', 'insite_message_received',
+    'insite_invitation_received',
+    'insite_dispute_received', 'insite_dispute_message_received', 'insite_dispute_status_update',
 ]
 
 

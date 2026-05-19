@@ -395,24 +395,42 @@
   };
 
   // ── Include existing timeline images ──────────────────────────────────
+  function mimeFromName(name) {
+    var ext = (name.split('.').pop() || '').toLowerCase();
+    return { jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', gif: 'image/gif' }[ext] || 'image/jpeg';
+  }
+
   document.querySelectorAll('.progress-include-btn').forEach(function (btn) {
     btn.addEventListener('click', function () {
       var key        = btn.dataset.targetZone;
       var targetZone = zones[key];
       if (!targetZone) return;
 
-      var url     = btn.dataset.src;
-      var srcName = url.split('/').pop().split('?')[0] || 'image.jpg';
+      var url      = btn.dataset.src;
+      var srcName  = url.split('/').pop().split('?')[0] || 'image.jpg';
+      var origText = btn.textContent;
 
-      btn.disabled = true;
-      fetch(url)
-        .then(function (r) { return r.blob(); })
-        .then(function (blob) {
-          btn.disabled = false;
-          var file = new File([blob], srcName, { type: blob.type || 'image/jpeg' });
-          targetZone.addFiles([file]);
+      btn.disabled    = true;
+      btn.textContent = '…';
+
+      fetch(url, { credentials: 'same-origin' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('HTTP ' + r.status);
+          return r.blob();
         })
-        .catch(function () { btn.disabled = false; });
+        .then(function (blob) {
+          var type = (blob.type && blob.type.startsWith('image/')) ? blob.type : mimeFromName(srcName);
+          var file = new File([blob], srcName, { type: type });
+          var added = targetZone.addFiles([file]);
+          btn.disabled    = false;
+          btn.textContent = (added && added.length) ? '✓ Added' : origText;
+          if (added && added.length) setTimeout(function () { btn.textContent = origText; }, 2000);
+        })
+        .catch(function () {
+          btn.disabled    = false;
+          btn.textContent = 'Failed';
+          setTimeout(function () { btn.textContent = origText; }, 2000);
+        });
     });
   });
 
