@@ -47,8 +47,7 @@ def start_conversation_view(request: HttpRequest, proposal_id: int) -> HttpRespo
 @login_required
 def conversation_list_view(request: HttpRequest) -> HttpResponse:
     conversations = Conversation.objects.filter(
-        Q(requester=request.user) | Q(artisan=request.user),
-        is_active=True
+        Q(requester=request.user) | Q(artisan=request.user)
     ).select_related(
         'proposal',
         'requester',
@@ -68,10 +67,20 @@ def conversation_detail_view(request, conversation_id):
     if request.user not in [conversation.requester, conversation.artisan]:
         return redirect('message:conversation_list_view')
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     if request.method == "POST":
+        if not conversation.is_active:
+            error_message = 'This conversation is closed. You can still view the message history.'
+
+            if is_ajax:
+                return JsonResponse({'error': error_message, 'conversation_closed': True}, status=403)
+
+            messages.warning(request, error_message)
+            return redirect('message:conversation_detail_view', conversation_id=conversation.id)
+
         body = request.POST.get("body", "").strip()
         image = request.FILES.get("image")
-        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
 
         if body and not text_is_clean(body):
             if is_ajax:

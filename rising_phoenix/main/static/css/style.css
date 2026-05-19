@@ -8,6 +8,15 @@
     box-shadow: 0 10px 28px rgba(27, 18, 10, 0.06);
 }
 
+.browse-hero-content h1 {
+    color: var(--saaf-heading, #38261E);
+}
+
+.browse-hero-content p,
+.browse-hero-content .text-muted {
+    color: var(--saaf-text-muted, #6A5648) !important;
+}
+
 .browse-hero {
     position: relative;
     padding-inline: clamp(0.75rem, 2vw, 1.5rem);
@@ -258,7 +267,57 @@
 
 [data-theme="dark"] .request-card-placeholder-icon,
 [data-theme="dark"] .request-card-placeholder-label {
-    color: rgba(242, 228, 209, 0.3);
+    color: rgba(242, 228, 209, 0.68);
+}
+
+/* Keep browse/request text readable on dark surfaces */
+[data-theme="dark"] .browse-hero-content,
+[data-theme="dark"] .filter-panel,
+[data-theme="dark"] .results-toolbar,
+[data-theme="dark"] .artisan-card {
+    background: var(--saaf-surface-1, #241B15) !important;
+    border-color: var(--saaf-border, rgba(232, 199, 164, 0.2)) !important;
+}
+
+[data-theme="dark"] .browse-hero-content h1,
+[data-theme="dark"] .filter-panel h5,
+[data-theme="dark"] .results-toolbar h5,
+[data-theme="dark"] .artisan-card h5,
+[data-theme="dark"] .artisan-workshop-name,
+[data-theme="dark"] .rating-input-box,
+[data-theme="dark"] .active-filter-chip,
+[data-theme="dark"] .category-chip,
+[data-theme="dark"] .filter-panel .form-control,
+[data-theme="dark"] .filter-panel .form-select,
+[data-theme="dark"] .browse-badge {
+    color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .browse-hero-content p,
+[data-theme="dark"] .browse-hero-content .text-muted,
+[data-theme="dark"] .filter-panel .text-muted,
+[data-theme="dark"] .filter-panel .form-label,
+[data-theme="dark"] .filter-panel .form-check-label,
+[data-theme="dark"] .results-toolbar .text-muted,
+[data-theme="dark"] .artisan-card .text-muted,
+[data-theme="dark"] .saaf-page-status,
+[data-theme="dark"] .search-input-icon,
+[data-theme="dark"] .request-card .text-muted,
+[data-theme="dark"] .request-card p {
+    color: var(--saaf-text-muted, #C9B79F) !important;
+}
+
+[data-theme="dark"] .filter-panel .form-control,
+[data-theme="dark"] .filter-panel .form-select,
+[data-theme="dark"] .rating-input-box,
+[data-theme="dark"] .active-filter-chip,
+[data-theme="dark"] .category-chip {
+    background: rgba(201, 183, 159, 0.1) !important;
+    border-color: var(--saaf-border, rgba(232, 199, 164, 0.2)) !important;
+}
+
+[data-theme="dark"] .filter-panel .form-control::placeholder {
+    color: rgba(242, 227, 207, 0.72) !important;
 }
 
 .pagination-wrap .pagination {

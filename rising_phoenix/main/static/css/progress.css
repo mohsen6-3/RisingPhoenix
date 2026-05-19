@@ -257,6 +257,24 @@
 .progress-comment-author,
 .progress-update-author { font-weight: 700; color: var(--ink); }
 
+[data-theme="dark"] .progress-section-title,
+[data-theme="dark"] .progress-event-label,
+[data-theme="dark"] .progress-comment-author,
+[data-theme="dark"] .progress-update-author,
+[data-theme="dark"] .progress-status-pill {
+    color: var(--saaf-cream-text, #F2E4D1);
+}
+
+[data-theme="dark"] .progress-post-card,
+[data-theme="dark"] .progress-update-card,
+[data-theme="dark"] .progress-action-card,
+[data-theme="dark"] .progress-event-card,
+[data-theme="dark"] .progress-textarea,
+[data-theme="dark"] .progress-sendback-textarea,
+[data-theme="dark"] .progress-textarea--comment {
+    color: var(--saaf-body, #E3D1BA);
+}
+
 .progress-event-actor,
 .progress-event-date,
 .progress-comment-date,

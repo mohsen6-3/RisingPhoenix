@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'message',
     'progress',
     'notification',
+    'django.contrib.humanize',
     'invitation',
     'dispute',
 ]

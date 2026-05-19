@@ -154,7 +154,7 @@ def browse_view(request: HttpRequest):
             '-artisanprofile__workshop_profile__created_at'
         ).distinct()
 
-    paginator = Paginator(artisans, 12)
+    paginator = Paginator(artisans, 6)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 

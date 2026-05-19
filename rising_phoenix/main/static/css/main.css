@@ -865,6 +865,23 @@ html[dir="rtl"] .sidebar-active-indicator {
     color: var(--saaf-white);
 }
 
+.saaf-hero .saaf-description {
+    color: rgba(255, 248, 240, 0.92) !important;
+}
+
+.saaf-hero .saaf-eyebrow,
+.saaf-hero .saaf-hero-title,
+.saaf-hero .saaf-text-accent {
+    color: var(--saaf-white) !important;
+}
+
+[data-theme="dark"] .saaf-hero .saaf-eyebrow,
+[data-theme="dark"] .saaf-hero .saaf-hero-title,
+[data-theme="dark"] .saaf-hero .saaf-text-accent,
+[data-theme="dark"] .saaf-hero .saaf-description {
+    color: var(--saaf-cream-text) !important;
+}
+
 .saaf-hero .btn-saaf-outline {
     background: rgba(255, 248, 240, 0.14);
     border-color: rgba(255, 248, 240, 0.35);
@@ -3425,4 +3442,32 @@ html[dir="rtl"] .sidebar-badge {
 .saaf-confirm-ok--default {
     background: var(--clay, #c2724f);
     color: var(--saaf-cream-text);
+}
+
+/* Text clarity pass: keep dark-mode text consistently readable */
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3,
+[data-theme="dark"] h4,
+[data-theme="dark"] h5,
+[data-theme="dark"] h6,
+[data-theme="dark"] .fw-bold,
+[data-theme="dark"] .fw-semibold {
+    color: var(--saaf-heading, #F2E3CF);
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] span,
+[data-theme="dark"] .text-muted,
+[data-theme="dark"] small,
+[data-theme="dark"] label,
+[data-theme="dark"] .form-text {
+    color: var(--saaf-body, #E3D1BA);
+}
+
+[data-theme="dark"] .card,
+[data-theme="dark"] .modal-content,
+[data-theme="dark"] .table,
+[data-theme="dark"] .list-group-item {
+    color: var(--saaf-body, #E3D1BA);
 }

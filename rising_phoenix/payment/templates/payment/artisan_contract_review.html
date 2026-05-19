@@ -14,7 +14,7 @@
                             <p class="text-uppercase small text-muted fw-semibold mb-2">Contract Review</p>
                             <h2 class="fw-bold mb-1">Review the contract details</h2>
                             <p class="text-muted mb-0">
-                                Review the requester’s accepted proposal details before approving the contract and starting the project.
+                                Review the requester’s original request and the accepted proposal details before approving the contract and starting the project.
                             </p>
                         </div>
 
@@ -25,7 +25,7 @@
                     </div>
 
                     <div class="border rounded-4 p-4 mb-4 bg-light-subtle">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
                             <div>
                                 <p class="text-muted small mb-2">Request</p>
                                 <h4 class="fw-bold mb-2">{{ project_request.title }}</h4>
@@ -38,56 +38,142 @@
                                 Contract #{{ contract.id }}
                             </span>
                         </div>
-                    </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <div class="border rounded-4 p-3 h-100">
-                                <p class="text-muted small mb-2">Requester</p>
-                                <h6 class="fw-bold mb-1">
-                                    {{ project_request.requester.get_full_name|default:project_request.requester.username }}
-                                </h6>
-                                <p class="text-muted small mb-0">@{{ project_request.requester.username }}</p>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <div class="border rounded-4 p-3 h-100 bg-white">
+                                    <p class="text-muted small mb-1">Requester</p>
+                                    <div class="fw-semibold">
+                                        {{ project_request.requester.get_full_name|default:project_request.requester.username }}
+                                    </div>
+                                    <p class="text-muted small mb-0">@{{ project_request.requester.username }}</p>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-6">
-                            <div class="border rounded-4 p-3 h-100">
-                                <p class="text-muted small mb-2">Estimated completion</p>
-                                <h6 class="fw-bold mb-1">
-                                    {{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}
-                                </h6>
-                                <p class="text-muted small mb-0">From the time work begins</p>
+                            <div class="col-md-4">
+                                <div class="border rounded-4 p-3 h-100 bg-white">
+                                    <p class="text-muted small mb-1">Category</p>
+                                    <div class="fw-semibold">{{ project_request.category.name }}</div>
+                                </div>
                             </div>
+
+                            {% if project_request.deadline %}
+                            <div class="col-md-4">
+                                <div class="border rounded-4 p-3 h-100 bg-white">
+                                    <p class="text-muted small mb-1">Deadline</p>
+                                    <div class="fw-semibold">{{ project_request.deadline }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <div class="border rounded-4 p-4 mb-4">
-                        <p class="text-muted small mb-2">Service details</p>
-                        <div class="fw-medium" style="white-space: pre-line;">
-                            {{ proposal.message }}
-                        </div>
-                    </div>
-
-                    {% with imgs=proposal.images.all %}
-                        {% if imgs %}
+                    {% with request_imgs=project_request.images.all %}
+                        {% if request_imgs %}
                             <div class="mb-4">
-                                <p class="text-muted small mb-3">Proposal images</p>
+                                <p class="text-muted small mb-3">Request images</p>
                                 <div class="row g-3">
-                                    {% for img in imgs %}
+                                    {% for img in request_imgs %}
                                         <div class="col-6 col-md-4">
                                             <a href="{{ img.image.url }}" target="_blank" rel="noopener noreferrer" class="d-block text-decoration-none">
                                                 <img src="{{ img.image.url }}"
-                                                     alt="Proposal image {{ forloop.counter }}"
+                                                     alt="{{ img.caption|default:'Request image' }}"
                                                      class="img-fluid rounded-4 border"
                                                      style="width: 100%; height: 180px; object-fit: cover;">
                                             </a>
+                                            {% if img.caption %}
+                                                <p class="small text-muted mt-2 mb-0">{{ img.caption }}</p>
+                                            {% endif %}
                                         </div>
                                     {% endfor %}
                                 </div>
                             </div>
                         {% endif %}
                     {% endwith %}
+
+                    <div class="border rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                            <div>
+                                <p class="text-muted small mb-2">Accepted proposal</p>
+                                <h5 class="fw-bold mb-1">
+                                    {{ proposal.artisan.get_full_name|default:proposal.artisan.username }}
+                                </h5>
+                                <p class="text-muted small mb-0">@{{ proposal.artisan.username }}</p>
+                            </div>
+
+                            <span class="badge rounded-pill text-bg-primary px-3 py-2">
+                                {{ proposal.price|floatformat:2 }} SAR
+                            </span>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="border rounded-4 p-3 h-100 bg-light-subtle">
+                                    <p class="text-muted small mb-1">Estimated completion</p>
+                                    <div class="fw-semibold">
+                                        {{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="border rounded-4 p-3 h-100 bg-light-subtle">
+                                    <p class="text-muted small mb-1">Approved amount</p>
+                                    <div class="fw-semibold">
+                                        {{ proposal.price|floatformat:2 }} SAR
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-4 p-4 bg-body-tertiary">
+                            <p class="text-muted small mb-2">Service details</p>
+                            <div class="fw-medium" style="white-space: pre-wrap;">
+                                {{ proposal.message }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% with proposal_imgs=proposal.images.all %}
+                        {% if proposal_imgs %}
+                            <div class="mb-4">
+                                <p class="text-muted small mb-3">Proposal images</p>
+                                <div class="row g-3">
+                                    {% for img in proposal_imgs %}
+                                        <div class="col-6 col-md-4">
+                                            <a href="{{ img.image.url }}" target="_blank" rel="noopener noreferrer" class="d-block text-decoration-none">
+                                                <img src="{{ img.image.url }}"
+                                                     alt="{{ img.caption|default:'Proposal image' }}"
+                                                     class="img-fluid rounded-4 border"
+                                                     style="width: 100%; height: 180px; object-fit: cover;">
+                                            </a>
+                                            {% if img.caption %}
+                                                <p class="small text-muted mt-2 mb-0">{{ img.caption }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <div class="border rounded-4 p-4 mb-4 bg-light-subtle">
+                        <p class="text-muted small mb-2">Contract terms</p>
+                        <p class="mb-2">
+                            The requester
+                            <strong>{{ project_request.requester.get_full_name|default:project_request.requester.username }}</strong>
+                            has approved this contract for the request
+                            "<strong>{{ project_request.title }}</strong>".
+                        </p>
+                        <p class="mb-2">
+                            You are expected to complete the agreed work within
+                            <strong>{{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}</strong>
+                            for <strong>{{ proposal.price|floatformat:2 }} SAR</strong>.
+                        </p>
+                        <p class="mb-0">
+                            If you accept, the contract will become active and work may begin under these terms.
+                        </p>
+                    </div>
 
                     <div class="alert alert-info border-0 rounded-4 mb-0">
                         <div class="d-flex gap-3 align-items-start">
@@ -96,7 +182,7 @@
                                 <h6 class="fw-bold mb-1">Before you accept</h6>
                                 <p class="mb-0 small">
                                     The requester has already approved this contract and authorized the payment hold.
-                                    If you accept, the contract will become active and work can begin.
+                                    If you accept, the contract becomes active and the project can begin.
                                 </p>
                             </div>
                         </div>
@@ -152,7 +238,12 @@
                         {% csrf_token %}
 
                         <div class="form-check mb-4">
-                            <input class="form-check-input" type="checkbox" value="1" id="accept_terms" required>
+                            <input class="form-check-input"
+                                   type="checkbox"
+                                   name="accept_terms"
+                                   value="1"
+                                   id="accept_terms"
+                                   required>
                             <label class="form-check-label small text-muted" for="accept_terms">
                                 I have reviewed the contract details and agree to proceed with this project.
                             </label>

@@ -20,11 +20,14 @@ from django.contrib.auth.forms import PasswordResetForm
 from notification.utils import send_welcome_email, send_artisan_welcome_email
 import stripe
 from django.urls import reverse
-
+from progress.models import Contract
 from django.core.paginator import Paginator
 from request.models import Request
 from staff.views import submit_report_view, my_reports_view  # re-export for account URLs
 # Create your views here.
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
 
 def signup_view(request: HttpRequest):
     if request.user.is_authenticated:
@@ -90,6 +93,13 @@ def artisan_signup_view(request:HttpRequest):
                 new_user.groups.add(artisan_group)
                 profile = profile_form.save(commit=False)
                 profile.user = new_user
+
+                selected_default_avatar = request.POST.get('default_avatar')
+
+                if not request.FILES.get('avatar') and selected_default_avatar:
+                    profile.avatar = f'images/avatars/defaults/{selected_default_avatar}'
+
+
                 profile.save()
                 messages.success(request, "You have been register")
             send_artisan_welcome_email(new_user)
@@ -97,9 +107,24 @@ def artisan_signup_view(request:HttpRequest):
         else:
             print(user_form.errors)
             messages.error(request, "something goes Wrong")
-            return render(request, 'account/artisan_signup.html', {'user_form': user_form, 'profile_form': profile_form})
+            return render(request, 'account/artisan_signup.html', {'user_form': user_form, 'profile_form': profile_form,
+                'default_avatar_choices': [
+                    'avatar1.png',
+                    'avatar2.png',
+                    'avatar3.png',
+                    'avatar4.png',
+                ]
+})
         
-    return render(request, 'account/artisan_signup.html')
+    return render(request, 'account/artisan_signup.html',{
+        'default_avatar_choices': [
+            'avatar1.png',
+            'avatar2.png',
+            'avatar3.png',
+            'avatar4.png',
+        ]
+
+    })
 
         
 
@@ -140,261 +165,125 @@ def is_artisan(user):
 @login_required(login_url='account:login_view')
 @user_passes_test(is_artisan, login_url='main:home_view')
 def artisan_dashboard_view(request: HttpRequest):
-    """Artisan dashboard showing stats, orders, and workshop info."""
-
-    try:
-        artisan_profile = ArtisanProfile.objects.get(
-            user=request.user
-        )
-    except ArtisanProfile.DoesNotExist:
-        messages.error(
-            request,
-            "You don't have an artisan profile."
-        )
-        return redirect('main:home_view')
-
-    workshop = getattr(
-        artisan_profile,
-        'workshop_profile',
-        None
-    )
-
+    artisan = request.user
     now = timezone.now()
-    year = now.year
-    month = now.month
 
-    from progress.models import Contract, ProgressUpdate
-    from request.models import Request as UserRequest
-    from proposal.models import Proposal
-
-
-    # ==========================
-    # Earnings last 6 months
-    # ==========================
-
-    earnings_6months = []
-
-    for n in range(5, -1, -1):
-
-        total_months = (
-            (year * 12 + month - 1)
-            - n
-        )
-
-        y = total_months // 12
-        m = total_months % 12 + 1
-
-        total = (
-            Contract.objects.filter(
-                proposal__artisan=request.user,
-                status=Contract.Status.COMPLETED,
-                completed_at__year=y,
-                completed_at__month=m
-            )
-            .aggregate(
-                total=Sum(
-                    'proposal__price'
-                )
-            )['total']
-            or 0
-        )
-
-        earnings_6months.append({
-            'label': f"{calendar.month_abbr[m]} {y}",
-            'total': float(total)
-        })
-
-
-    earnings_this_month = (
-        earnings_6months[-1]['total']
-        if earnings_6months
-        else 0
+    revenues = (
+        ArtisanRevenue.objects
+        .filter(artisan=artisan)
+        .select_related('contract', 'escrow_payment')
+        .order_by('-created_at')
     )
 
-    earnings_last_month = (
-        earnings_6months[-2]['total']
-        if len(earnings_6months) > 1
-        else 0
-    )
+    total_earned = revenues.filter(
+        status__in=[ArtisanRevenue.Status.EARNED, ArtisanRevenue.Status.PAID]
+    ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
 
-    try:
+    total_paid = revenues.filter(
+        status=ArtisanRevenue.Status.PAID
+    ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
 
-        if earnings_last_month == 0:
+    current_balance = revenues.filter(
+        status=ArtisanRevenue.Status.EARNED
+    ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
 
-            earnings_growth_percent = (
-                100
-                if earnings_this_month > 0
-                else 0
-            )
+    this_month_total = revenues.filter(
+        created_at__year=now.year,
+        created_at__month=now.month,
+        status__in=[ArtisanRevenue.Status.EARNED, ArtisanRevenue.Status.PAID]
+    ).aggregate(total=Sum('net_amount'))['total'] or Decimal('0.00')
 
-        else:
+    this_month_jobs = revenues.filter(
+        created_at__year=now.year,
+        created_at__month=now.month,
+        status__in=[ArtisanRevenue.Status.EARNED, ArtisanRevenue.Status.PAID]
+    ).aggregate(count=Count('id'))['count'] or 0
 
-            earnings_growth_percent = int(
-                (
-                    (
-                        earnings_this_month
-                        - earnings_last_month
-                    )
-                    /
-                    float(
-                        earnings_last_month
-                    )
-                ) * 100
-            )
+    recent_revenues = revenues[:10]
 
-    except Exception:
-
-        earnings_growth_percent = 0
-
-
-    # ==========================
-    # Active Orders
-    # ==========================
-
-    active_contracts_qs = (
-        Contract.objects.filter(
-            proposal__artisan=request.user,
-            status=Contract.Status.IN_PROGRESS
-        )
-        .select_related(
-            'proposal',
-            'proposal__request'
-        )
-    )
-
-    active_orders = active_contracts_qs.count()
-
-
-    # ==========================
-    # Completed Orders
-    # ==========================
-
-    completed_orders = (
-        Contract.objects.filter(
-            proposal__artisan=request.user,
-            status=Contract.Status.COMPLETED
-        )
-        .select_related(
-            'proposal',
-            'proposal__request'
-        )
-        .order_by(
-            '-completed_at'
-        )
-    )
-
-
-    # ==========================
-    # Awaiting photos
-    # ==========================
-
-    photos_awaiting = (
-        ProgressUpdate.objects.filter(
-            contract__proposal__artisan=request.user
-        )
+    monthly_revenues = (
+        revenues.filter(status__in=[ArtisanRevenue.Status.EARNED, ArtisanRevenue.Status.PAID])
+        .annotate(month=TruncMonth('created_at'))
+        .values('month')
         .annotate(
-            img_count=Count(
-                'images'
-            )
+            total=Sum('net_amount'),
+            jobs=Count('id')
         )
-        .filter(
-            img_count=0
-        )
-        .count()
+        .order_by('month')
     )
 
+    chart_labels = [item['month'].strftime('%b %Y') for item in monthly_revenues if item['month']]
+    chart_totals = [float(item['total'] or 0) for item in monthly_revenues]
 
-    # ==========================
-    # Proposals
-    # ==========================
+    active_requests = Contract.objects.filter(
+        proposal__artisan=artisan,
+        status=Contract.Status.IN_PROGRESS,
+    ).select_related('proposal__request', 'proposal__artisan').order_by('-created_at')
 
-    my_proposals_qs = (
-        Proposal.objects.filter(
-            artisan=request.user
-        )
-        .select_related(
-            'request'
-        )
-    )
+    completed_requests = Contract.objects.filter(
+        proposal__artisan=artisan,
+        status=Contract.Status.COMPLETED,
+    ).select_related('proposal__request', 'proposal__artisan').order_by('-created_at')[:5]
 
-    my_proposals = my_proposals_qs.count()
+    stripe_connected = False
+    stripe_payouts_enabled = False
+    stripe_charges_enabled = False
+    stripe_details_submitted = False
+    stripe_status_message = ''
+    stripe_requirements_due = 0
 
-    my_proposals_pending = (
-        my_proposals_qs.filter(
-            status=Proposal.Status.PENDING
-        ).count()
-    )
+    stripe_account_id = getattr(getattr(artisan, 'artisanprofile', None), 'stripe_connected_account_id', None)
 
+    if stripe_account_id:
+        stripe_connected = True
+        try:
+            stripe_account = stripe.Account.retrieve(stripe_account_id)
 
-    # ==========================
-    # Matching Requests
-    # ==========================
+            stripe_payouts_enabled = getattr(stripe_account, 'payouts_enabled', False)
+            stripe_charges_enabled = getattr(stripe_account, 'charges_enabled', False)
+            stripe_details_submitted = getattr(stripe_account, 'details_submitted', False)
 
-    requests_matching_count = 0
-    requests_matching_list = []
+            requirements = getattr(stripe_account, 'requirements', None)
+            currently_due = getattr(requirements, 'currently_due', []) if requirements else []
+            stripe_requirements_due = len(currently_due)
+            disabled_reason = getattr(requirements, 'disabled_reason', None) if requirements else None
 
-    if workshop and hasattr(
-        workshop,
-        'categories'
-    ):
+            if stripe_payouts_enabled:
+                stripe_status_message = 'Your Stripe account is connected and ready for payouts.'
+            elif disabled_reason == 'requirements.past_due':
+                stripe_status_message = 'More information is required to enable payouts.'
+            elif disabled_reason == 'requirements.pending_verification':
+                stripe_status_message = 'Stripe is reviewing your information.'
+            elif disabled_reason:
+                stripe_status_message = disabled_reason.replace('.', ' ').replace('_', ' ').title()
+            else:
+                stripe_status_message = 'Complete your Stripe onboarding to receive payouts.'
 
-        cats = workshop.categories.all()
-
-        if cats.exists():
-
-            reqs_qs = (
-                UserRequest.objects.filter(
-                    status=UserRequest.Status.OPEN,
-                    category__in=cats
-                )
-                .distinct()
-            )
-
-            requests_matching_count = reqs_qs.count()
-
-            requests_matching_list = list(
-                reqs_qs.order_by(
-                    '-created_at'
-                )[:5]
-            )
-
-
-    stats = {
-
-        'earnings_6months': earnings_6months,
-        'earnings_this_month': earnings_this_month,
-        'earnings_last_month': earnings_last_month,
-        'earnings_growth_percent': earnings_growth_percent,
-        'active_orders': active_orders,
-        'photos_awaiting': photos_awaiting,
-        'rating': artisan_profile.average_rating,
-        'rating_reviews': request.user.reviews_received.count(),
-        'open_requests': requests_matching_count,
-
-    }
-
+        except stripe.error.StripeError:
+            stripe_status_message = 'Unable to load Stripe account status right now.'
 
     context = {
-
-        'artisan': artisan_profile,
-        'workshop': workshop,
-        'stats': stats,
-
-        'active_contracts': active_contracts_qs[:3],
-
-        'completed_orders': completed_orders[:3],
-
-        'my_proposals': my_proposals_qs[:3],
-
-        'requests_matching_list': requests_matching_list,
-
+        'total_earned': total_earned,
+        'total_paid': total_paid,
+        'current_balance': current_balance,
+        'this_month_total': this_month_total,
+        'this_month_jobs': this_month_jobs,
+        'recent_revenues': recent_revenues,
+        'monthly_revenues': monthly_revenues,
+        'chart_labels': chart_labels,
+        'chart_totals': chart_totals,
+        'active_requests': active_requests,
+        'completed_requests': completed_requests,
+        'stripe_connected': stripe_connected,
+        'stripe_payouts_enabled': stripe_payouts_enabled,
+        'stripe_charges_enabled': stripe_charges_enabled,
+        'stripe_details_submitted': stripe_details_submitted,
+        'stripe_status_message': stripe_status_message,
+        'stripe_requirements_due': stripe_requirements_due,
+        'page_title': 'Earnings Dashboard',
     }
 
-    return render(
-        request,
-        'account/artisan_dashboard.html',
-        context
-    )
+    return render(request, 'account/artisan_dashboard.html', context)
 
 def profile_view(request:HttpRequest, user_name):
     user = get_object_or_404(User, username = user_name)
@@ -670,6 +559,16 @@ def artisan_revenue_dashboard_view(request):
     chart_labels = [item['month'].strftime('%b %Y') for item in monthly_revenues if item['month']]
     chart_totals = [float(item['total'] or 0) for item in monthly_revenues]
 
+    active_requests = Contract.objects.filter(
+        proposal__artisan=artisan,
+        status=Contract.Status.IN_PROGRESS,
+    ).select_related('proposal__request', 'proposal__artisan').order_by('-created_at')
+
+    completed_requests = Contract.objects.filter(
+        proposal__artisan=artisan,
+        status=Contract.Status.COMPLETED,
+    ).select_related('proposal__request', 'proposal__artisan').order_by('-created_at')[:5]
+
     context = {
         'total_earned': total_earned,
         'total_paid': total_paid,
@@ -680,9 +579,12 @@ def artisan_revenue_dashboard_view(request):
         'monthly_revenues': monthly_revenues,
         'chart_labels': chart_labels,
         'chart_totals': chart_totals,
+        'active_requests': active_requests,
+        'completed_requests': completed_requests,
         'page_title': 'Earnings Dashboard',
     }
     return render(request, 'account/artisan_revenue_dashboard.html', context)
+
 
 
 @login_required

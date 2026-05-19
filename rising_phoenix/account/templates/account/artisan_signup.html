@@ -1,6 +1,10 @@
 {% extends "main/base.html" %}
-
+{% load static %}
 {% block title %}Artisan Sign Up{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/style.css' %}">
+{% endblock %}
 
 {% block content %}
 <div class="container py-5">
@@ -123,19 +127,46 @@
                             {% endfor %}
                         </div>
 
-                        <div class="mb-3">
-                            <label for="avatar" class="form-label">Avatar</label>
-                            <input
-                                type="file"
-                                name="avatar"
-                                id="avatar"
-                                class="form-control {% if profile_form.avatar.errors %}is-invalid{% endif %}"
-                            >
-                            {% for error in profile_form.avatar.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
-                            {% endfor %}
-                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="avatar" class="form-label">Avatar</label>
+                                <input
+                                    type="file"
+                                    name="avatar"
+                                    id="avatar"
+                                    class="form-control {% if profile_form.avatar.errors %}is-invalid{% endif %}"
+                                >
+                                {% for error in profile_form.avatar.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">
+                                    You can upload your own image or choose one of the default avatars below.
+                                </div>
+                            </div>
 
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label d-block">Or choose a default avatar</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    {% for avatar in default_avatar_choices %}
+                                        <label class="default-avatar-option text-center">
+                                            <input
+                                                type="radio"
+                                                name="default_avatar"
+                                                value="{{ avatar }}"
+                                                class="d-none"
+                                                {% if request.POST.default_avatar == avatar %}checked{% endif %}
+                                            >
+                                            <img
+                                                src="{% static 'images/avatars/defaults/'|add:avatar %}"
+                                                alt="Default avatar"
+                                                class="rounded-circle border shadow-sm default-avatar-preview"
+                                                style="width: 72px; height: 72px; object-fit: cover; cursor: pointer;"
+                                            >
+                                        </label>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
                                 <label for="password1" class="form-label">Password</label>

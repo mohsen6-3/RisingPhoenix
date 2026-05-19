@@ -4,7 +4,8 @@ from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-
+from django.core.mail import EmailMessage
+from django.template.loader import render_to_string
 from notification.utils import notify
 from .models import StripeCustomer, PaymentMethod, EscrowPayment
 from django.conf import settings
@@ -19,7 +20,8 @@ from .services import process_monthly_artisan_payouts
 from django.views.decorators.http import require_POST
 from django.contrib.admin.views.decorators import staff_member_required
 import logging
-
+from .utils import send_contract_pdf_email
+from message.models import Conversation
 
 # Create your views here.
 
@@ -61,6 +63,34 @@ def add_card_view(request):
         'client_secret': setup_intent.client_secret,
         'stripe_publishable_key': settings.STRIPE_PUBLISHABLE_KEY,
     })
+
+@require_POST
+def remove_card_view(request, card_id):
+    card = get_object_or_404(
+        PaymentMethod,
+        id=card_id,
+        user=request.user,
+    )
+    
+    try:
+        stripe.PaymentMethod.detach(card.stripe_payment_method_id)
+    except stripe.error.StripeError:
+        messages.error(request, 'Could not remove this card right now. Please try again.')
+        return redirect('payment:my_cards')
+
+    was_default = card.is_default
+    user = card.user
+    card.delete()
+
+    if was_default:
+        next_card = user.payment_methods.order_by('-created_at').first()
+        if next_card:
+            next_card.is_default = True
+            next_card.save(update_fields=['is_default'])
+
+    messages.success(request, 'Card removed successfully.')
+    return redirect('payment:my_cards')
+
 
 
 def save_card_success(request):
@@ -128,6 +158,9 @@ def artisan_contract_review_view(request, contract_id):
             'proposal__artisan',
             'proposal__request__requester',
             'escrow_payment',
+        ).prefetch_related(
+            'proposal__images',
+            'proposal__request__images',
         ),
         id=contract_id
     )
@@ -289,6 +322,9 @@ def confirm_proposal_payment_view(request, proposal_id):
     return redirect('progress:contract_detail_view', contract_id=contract.id)
 
 
+
+
+
 def artisan_accept_contract_view(request, contract_id):
     contract = get_object_or_404(
         Contract.objects.select_related(
@@ -296,6 +332,7 @@ def artisan_accept_contract_view(request, contract_id):
             'proposal__request',
             'proposal__artisan',
             'proposal__request__requester',
+            'proposal__request__category',
             'escrow_payment',
         ),
         id=contract_id
@@ -358,9 +395,7 @@ def artisan_accept_contract_view(request, contract_id):
         return redirect('request:request_detail_view', request_id=contract.proposal.request.id)
 
     try:
-        captured_intent = stripe.PaymentIntent.capture(
-            escrow_payment.stripe_payment_intent_id
-        )
+        stripe.PaymentIntent.capture(escrow_payment.stripe_payment_intent_id)
     except stripe.error.StripeError:
         messages.error(request, 'The payment could not be captured. Please try again.')
         return redirect('payment:artisan_contract_review_view', contract_id=contract.id)
@@ -378,9 +413,13 @@ def artisan_accept_contract_view(request, contract_id):
         escrow_payment.captured = True
         escrow_payment.save(update_fields=['status', 'captured', 'updated_at'])
 
+    try:
+        send_contract_pdf_email(contract)
+    except Exception:
+        messages.warning(request, 'Contract accepted, but the PDF email could not be sent.')
+
     messages.success(request, 'Contract accepted and payment captured successfully.')
     return redirect('progress:contract_detail_view', contract_id=contract.id)
-
 
 def artisan_reject_contract_view(request, contract_id):
     contract = get_object_or_404(
@@ -421,6 +460,11 @@ def artisan_reject_contract_view(request, contract_id):
         proposal = contract.proposal
         proposal.status = Proposal.Status.REJECTED
         proposal.save(update_fields=['status', 'updated_at'])
+        conversation = Conversation.objects.filter(proposal=contract.proposal).first()
+        if conversation:
+            conversation.is_active = False
+            conversation.save(update_fields=['is_active'])
+
 
     messages.success(request, 'Contract rejected and payment hold canceled.')
     return redirect('request:request_detail_view', request_id=contract.proposal.request.id)

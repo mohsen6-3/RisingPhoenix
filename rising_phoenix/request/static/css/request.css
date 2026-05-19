@@ -1317,6 +1317,150 @@ h5 {
 	transition: color 0.15s;
 }
 
+/* Dark mode readability overrides for request pages */
+[data-theme="dark"] .request-hero {
+	background: linear-gradient(155deg, #2a2019 0%, #332720 100%);
+	border-color: rgba(232, 199, 164, 0.24);
+}
+
+[data-theme="dark"] .request-hero h1,
+[data-theme="dark"] .request-hero h2,
+[data-theme="dark"] .request-hero h3,
+[data-theme="dark"] .request-eyebrow,
+[data-theme="dark"] .request-sub {
+	color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .request-form-card,
+[data-theme="dark"] .request-detail-card,
+[data-theme="dark"] .request-card,
+[data-theme="dark"] .request-empty,
+[data-theme="dark"] .existing-img-item,
+[data-theme="dark"] .img-preview-item,
+[data-theme="dark"] .ai-review-panel {
+	background: var(--saaf-surface-1, #241B15);
+	border-color: rgba(232, 199, 164, 0.22);
+}
+
+[data-theme="dark"] .request-label,
+[data-theme="dark"] .request-card-title,
+[data-theme="dark"] .request-card-title-link,
+[data-theme="dark"] .request-detail-title,
+[data-theme="dark"] .request-detail-subtitle,
+[data-theme="dark"] .img-upload-text,
+[data-theme="dark"] .suggested-name {
+	color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .request-detail-by,
+[data-theme="dark"] .request-card-meta-by,
+[data-theme="dark"] .request-card-proposals,
+[data-theme="dark"] .request-card-desc,
+[data-theme="dark"] .request-meta,
+[data-theme="dark"] .field-hint,
+[data-theme="dark"] .desc-char-counter,
+[data-theme="dark"] .img-upload-sub,
+[data-theme="dark"] .request-empty,
+[data-theme="dark"] .request-detail-description,
+[data-theme="dark"] .suggested-by,
+[data-theme="dark"] .suggested-tagline,
+[data-theme="dark"] .suggested-location,
+[data-theme="dark"] .suggested-empty,
+[data-theme="dark"] .ai-refine-status,
+[data-theme="dark"] .ai-review-title,
+[data-theme="dark"] .ai-missing-item,
+[data-theme="dark"] .ai-diff-output,
+[data-theme="dark"] .request-image-caption,
+[data-theme="dark"] .img-preview-name,
+[data-theme="dark"] .existing-img-remove,
+[data-theme="dark"] .request-row p,
+[data-theme="dark"] .request-detail-card p,
+[data-theme="dark"] .request-form-card p {
+	color: var(--saaf-body, #E3D1BA) !important;
+}
+
+[data-theme="dark"] .request-input,
+[data-theme="dark"] .request-select,
+[data-theme="dark"] .request-textarea,
+[data-theme="dark"] .img-preview-caption,
+[data-theme="dark"] .existing-img-caption {
+	background: rgba(201, 183, 159, 0.1);
+	border-color: rgba(232, 199, 164, 0.24);
+	color: var(--saaf-cream-text, #F2E4D1);
+}
+
+[data-theme="dark"] .request-input::placeholder,
+[data-theme="dark"] .request-textarea::placeholder,
+[data-theme="dark"] .img-preview-caption::placeholder,
+[data-theme="dark"] .existing-img-caption::placeholder {
+	color: rgba(242, 227, 207, 0.66);
+}
+
+[data-theme="dark"] .request-detail-meta-item {
+	background: rgba(201, 183, 159, 0.12);
+	border-color: rgba(232, 199, 164, 0.24);
+	color: var(--saaf-cream-text, #F2E4D1);
+}
+
+[data-theme="dark"] .request-detail-meta-item .request-label,
+[data-theme="dark"] .request-detail-meta-item p {
+	color: var(--saaf-cream-text, #F2E4D1) !important;
+}
+
+[data-theme="dark"] .request-detail-meta-item .status-open {
+	background: rgba(102, 179, 128, 0.18);
+	color: #b8ebc6;
+}
+
+[data-theme="dark"] .request-detail-meta-item .status-in-review {
+	background: rgba(199, 122, 92, 0.2);
+	color: #f1c9b8;
+}
+
+[data-theme="dark"] .request-detail-meta-item .status-time-ended {
+	background: rgba(121, 105, 170, 0.24);
+	color: #d4c8f2;
+}
+
+[data-theme="dark"] .request-detail-meta-item .status-closed {
+	background: rgba(232, 199, 164, 0.2);
+	color: #f2dec1;
+}
+
+[data-theme="dark"] .request-tag {
+	background: rgba(232, 199, 164, 0.22);
+	border: 1px solid rgba(232, 199, 164, 0.28);
+	color: var(--saaf-cream-text, #F2E4D1);
+}
+
+[data-theme="dark"] .status-pill {
+	border: 1px solid transparent;
+}
+
+[data-theme="dark"] .status-open {
+	background: rgba(97, 170, 121, 0.24);
+	border-color: rgba(97, 170, 121, 0.34);
+	color: #c9f1d4;
+}
+
+[data-theme="dark"] .status-in-review {
+	background: rgba(199, 122, 92, 0.26);
+	border-color: rgba(199, 122, 92, 0.34);
+	color: #f4d3c4;
+}
+
+[data-theme="dark"] .status-time-ended {
+	background: rgba(121, 105, 170, 0.3);
+	border-color: rgba(121, 105, 170, 0.4);
+	color: #ded3f6;
+}
+
+[data-theme="dark"] .status-closed {
+	background: rgba(232, 199, 164, 0.24);
+	border-color: rgba(232, 199, 164, 0.34);
+	color: #f7e9d5;
+}
+
 
 .desc-char-counter.is-long {
 	color: var(--clay);

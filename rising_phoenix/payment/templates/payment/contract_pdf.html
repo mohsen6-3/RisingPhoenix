@@ -1,0 +1,410 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Contract #{{ contract.id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 22mm 16mm 20mm 16mm;
+
+            @bottom-right {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10px;
+                color: #6b7280;
+            }
+        }
+
+        :root {
+            --primary: #0f766e;
+            --primary-soft: #e6f4f1;
+            --border: #d9e2e7;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --bg-soft: #f8fafc;
+            --bg-accent: #f1f5f9;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "DejaVu Sans", Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.65;
+            color: var(--text);
+            margin: 0;
+        }
+
+        h1, h2, h3, h4, p {
+            margin: 0;
+        }
+
+        .document {
+            width: 100%;
+        }
+
+        .header {
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 16px;
+            margin-bottom: 22px;
+        }
+
+        .header-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .header-table td {
+            vertical-align: top;
+        }
+
+        .logo {
+            width: 120px;
+            max-height: 56px;
+            object-fit: contain;
+        }
+
+        .brand-block {
+            text-align: right;
+        }
+
+        .eyebrow {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--primary);
+            margin-bottom: 6px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            font-size: 12px;
+        }
+
+        .meta-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 10px;
+            margin: 18px 0 22px;
+        }
+
+        .meta-card {
+            background: var(--bg-soft);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 14px;
+        }
+
+        .meta-label {
+            display: block;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted);
+            margin-bottom: 6px;
+        }
+
+        .meta-value {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .section {
+            margin-bottom: 20px;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .card {
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: #fff;
+            padding: 14px 16px;
+        }
+
+        .row-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .row-table td {
+            vertical-align: top;
+            padding: 6px 0;
+        }
+
+        .label {
+            width: 150px;
+            color: var(--muted);
+            font-weight: 700;
+        }
+
+        .value {
+            color: var(--text);
+        }
+
+        .description-box {
+            margin-top: 10px;
+            background: var(--bg-soft);
+            border-radius: 10px;
+            padding: 12px;
+            white-space: pre-wrap;
+        }
+
+        .terms {
+            background: var(--primary-soft);
+            border: 1px solid #b7ded8;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .terms p + p {
+            margin-top: 10px;
+        }
+
+        .acceptance-grid {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 14px 0;
+            margin-top: 10px;
+        }
+
+        .signature-box {
+            border: 1px dashed #b8c4cc;
+            border-radius: 12px;
+            padding: 14px;
+            background: #fff;
+            min-height: 110px;
+        }
+
+        .signature-role {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .signature-name {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+
+        .signature-date {
+            font-size: 11px;
+            color: var(--muted);
+        }
+
+        .footer-note {
+            margin-top: 24px;
+            font-size: 10px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .status-pill {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 999px;
+            background: var(--primary-soft);
+            color: var(--primary);
+            font-size: 11px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="document">
+        <div class="header">
+            <table class="header-table">
+                <tr>
+                    <td>
+                        <img src="{% static 'images/logo.png' %}" alt="Rising Phoenix logo" class="logo">
+                    </td>
+                    <td class="brand-block">
+                        <div class="eyebrow">Service Agreement</div>
+                        <div class="title">Contract #{{ contract.id }}</div>
+                        <div class="subtitle">Official agreement between requester and artisan</div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <table class="meta-grid">
+            <tr>
+                <td class="meta-card">
+                    <span class="meta-label">Project</span>
+                    <div class="meta-value">{{ project_request.title }}</div>
+                </td>
+                <td class="meta-card">
+                    <span class="meta-label">Amount</span>
+                    <div class="meta-value">{{ proposal.price }} SAR</div>
+                </td>
+                <td class="meta-card">
+                    <span class="meta-label">Duration</span>
+                    <div class="meta-value">{{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}</div>
+                </td>
+                <td class="meta-card">
+                    <span class="meta-label">Status</span>
+                    <div class="meta-value">
+                        <span class="status-pill">{{ contract.get_status_display|default:contract.status }}</span>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <div class="section">
+            <div class="section-title">Parties</div>
+            <div class="card">
+                <table class="row-table">
+                    <tr>
+                        <td class="label">Requester</td>
+                        <td class="value">{{ project_request.requester.get_full_name|default:project_request.requester.username }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Artisan</td>
+                        <td class="value">{{ proposal.artisan.get_full_name|default:proposal.artisan.username }}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Request details</div>
+            <div class="card">
+                <table class="row-table">
+                    <tr>
+                        <td class="label">Title</td>
+                        <td class="value">{{ project_request.title }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Category</td>
+                        <td class="value">{{ project_request.category.name }}</td>
+                    </tr>
+                    {% if project_request.budget_max %}
+                    <tr>
+                        <td class="label">Budget</td>
+                        <td class="value">{{ project_request.budget_max }} SAR</td>
+                    </tr>
+                    {% endif %}
+                    {% if project_request.deadline %}
+                    <tr>
+                        <td class="label">Deadline</td>
+                        <td class="value">{{ project_request.deadline }}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+
+                <div class="description-box">
+                    {{ project_request.description }}
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Proposal details</div>
+            <div class="card">
+                <table class="row-table">
+                    <tr>
+                        <td class="label">Price</td>
+                        <td class="value">{{ proposal.price }} SAR</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Estimated completion</td>
+                        <td class="value">{{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}</td>
+                    </tr>
+                </table>
+
+                <div class="description-box">
+                    {{ proposal.message }}
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Payment terms</div>
+            <div class="card">
+                <table class="row-table">
+                    <tr>
+                        <td class="label">Escrow status</td>
+                        <td class="value">{{ escrow_payment.status }}</td>
+                    </tr>
+                    <tr>
+                        <td class="label">Captured</td>
+                        <td class="value">{% if escrow_payment.captured %}Yes{% else %}No{% endif %}</td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Contract terms</div>
+            <div class="terms">
+                <p>
+                    This contract confirms that the requester
+                    <strong>{{ project_request.requester.get_full_name|default:project_request.requester.username }}</strong>
+                    has hired the artisan
+                    <strong>{{ proposal.artisan.get_full_name|default:proposal.artisan.username }}</strong>
+                    to complete the work described in the request titled
+                    “{{ project_request.title }}”.
+                </p>
+                <p>
+                    The artisan agrees to complete the work within
+                    <strong>{{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}</strong>
+                    for the total amount of
+                    <strong>{{ proposal.price }} SAR</strong>,
+                    subject to the platform’s payment and completion rules.
+                </p>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Acceptance record</div>
+            <table class="acceptance-grid">
+                <tr>
+                    <td class="signature-box">
+                        <div class="signature-role">Requester acceptance</div>
+                        <div class="signature-name">
+                            {{ project_request.requester.get_full_name|default:project_request.requester.username }}
+                        </div>
+                        <div class="signature-date">
+                            Accepted at: {{ contract.requester_accepted_at }}
+                        </div>
+                    </td>
+                    <td class="signature-box">
+                        <div class="signature-role">Artisan acceptance</div>
+                        <div class="signature-name">
+                            {{ proposal.artisan.get_full_name|default:proposal.artisan.username }}
+                        </div>
+                        <div class="signature-date">
+                            Accepted at: {{ contract.artisan_accepted_at }}
+                        </div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+
+        <div class="footer-note">
+            This document was generated automatically by Rising Phoenix and serves as the official contract record for this project.
+        </div>
+    </div>
+</body>
+</html>

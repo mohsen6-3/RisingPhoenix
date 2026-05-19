@@ -306,6 +306,29 @@
     gap: 0.5rem;
 }
 
+.proposal-chat-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.78rem;
+    border-radius: 999px;
+    border: 1px solid var(--border, #d8ccba);
+    background: rgba(241, 232, 213, 0.75);
+    color: var(--ink, #6B4826);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+    line-height: 1;
+    transition: background 0.18s, border-color 0.18s, color 0.18s, transform 0.15s;
+}
+
+.proposal-chat-btn:hover {
+    background: var(--clay, #c2724f);
+    border-color: var(--clay, #c2724f);
+    color: var(--saaf-cream-text, #F2E4D1);
+    transform: translateY(-1px);
+}
+
 .proposal-card-body {
     display: flex;
     flex-wrap: wrap;
@@ -573,11 +596,13 @@
 
 /* ── My Requests status card modifiers ── */
 .proposal-card--req-closed {
-    opacity: 0.6;
+    opacity: 0.9;
+    background: #f7f0e4;
 }
 
 .proposal-card--req-time_ended {
-    opacity: 0.55;
+    opacity: 0.86;
+    background: #f2ebdf;
 }
 
 .proposal-card--req-in_review {
@@ -588,6 +613,18 @@
 [data-theme="dark"] .proposal-card--req-in_review {
     background: linear-gradient(154deg, rgba(194, 114, 79, 0.12), rgba(42, 32, 25, 0.96));
     border-color: rgba(194, 114, 79, 0.4);
+}
+
+[data-theme="dark"] .proposal-card--req-closed {
+    opacity: 1;
+    background: linear-gradient(154deg, rgba(201, 183, 159, 0.12), rgba(42, 32, 25, 0.96));
+    border-color: rgba(232, 199, 164, 0.24);
+}
+
+[data-theme="dark"] .proposal-card--req-time_ended {
+    opacity: 1;
+    background: linear-gradient(154deg, rgba(155, 115, 72, 0.15), rgba(42, 32, 25, 0.96));
+    border-color: rgba(232, 199, 164, 0.24);
 }
 
 /* ── Shared empty state ── */
@@ -656,6 +693,18 @@
 [data-theme="dark"] .proposal-card-body,
 [data-theme="dark"] .proposal-card-actions {
     border-color: var(--saaf-border, rgba(232, 199, 164, 0.15));
+}
+
+[data-theme="dark"] .proposal-chat-btn {
+    background: rgba(201, 183, 159, 0.14);
+    border-color: rgba(232, 199, 164, 0.28);
+    color: var(--saaf-cream-text, #F2E4D1);
+}
+
+[data-theme="dark"] .proposal-chat-btn:hover {
+    background: var(--saaf-btn-hover, #AE6448);
+    border-color: var(--saaf-btn-hover, #AE6448);
+    color: var(--saaf-cream-text, #F2E4D1);
 }
 
 [data-theme="dark"] .proposal-status-pill--pending {

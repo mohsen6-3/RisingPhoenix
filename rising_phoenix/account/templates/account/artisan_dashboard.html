@@ -1,677 +1,788 @@
-{% extends "main/base.html" %}
+{% extends 'main/base.html' %}
+{% load static i18n %}
+{% get_current_language as LANGUAGE_CODE %}
 
-{% block title %}Artisan Dashboard{% endblock %}
+{% block title %}{{ page_title }} — Saaf{% endblock %}
 
 {% block extra_css %}
 <style>
-    :root {
-        --primary: #c96f52;
-        --light-bg: #faf3ec;
-        --card-bg: #fff;
-        --text-muted: #8b7461;
-        --border-light: #efe6dd;
-        --dark-header: #4d2f22;
+  /* ── Revenue Dashboard — Saaf-native styles ── */
+
+  .rev-shell {
+    position: relative;
+    padding-left: 80px; /* clear the 68px floating sidebar + its left offset */
+  }
+
+  @media (max-width: 768px) {
+    .rev-shell {
+      padding-left: 0; /* sidebar is hidden on mobile */
     }
+  }
+  .rev-shell::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 1.5rem;
+    width: 18rem; height: 18rem;
+    background: radial-gradient(circle, rgba(199,122,92,.15) 0%, transparent 70%);
+    pointer-events: none;
+    filter: blur(6px);
+    z-index: 0;
+  }
 
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
+  /* ── Stat cards ── */
+  .rev-stat-card {
+    position: relative;
+    z-index: 1;
+    background: var(--saaf-card-bg);
+    border: 1px solid var(--saaf-border);
+    border-radius: 18px;
+    padding: 1.35rem 1.4rem;
+    box-shadow: var(--saaf-shadow-sm);
+    transition: transform .22s ease, box-shadow .22s ease;
+    overflow: hidden;
+  }
+  .rev-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--saaf-shadow-lg);
+  }
+  .rev-stat-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px; height: 100%;
+    background: var(--saaf-btn);
+    border-radius: 4px 0 0 4px;
+  }
+  .rev-stat-card.accent-green::before  { background: #4caf7d; }
+  .rev-stat-card.accent-blue::before   { background: #5b8dee; }
+  .rev-stat-card.accent-amber::before  { background: #d4a92d; }
 
-    body {
-        background: var(--light-bg);
-        font-family: 'Manrope', sans-serif;
-        overflow-x: hidden;
-    }
+  .rev-stat-icon {
+    width: 42px; height: 42px;
+    border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem;
+    background: rgba(199,122,92,.12);
+    color: var(--saaf-btn);
+    margin-bottom: .9rem;
+  }
+  .rev-stat-card.accent-green .rev-stat-icon { background: rgba(76,175,125,.12); color: #4caf7d; }
+  .rev-stat-card.accent-blue  .rev-stat-icon { background: rgba(91,141,238,.12); color: #5b8dee; }
+  .rev-stat-card.accent-amber .rev-stat-icon { background: rgba(212,169,45,.12); color: #b8900a; }
 
-    /* Dashboard Container */
-    .dashboard-container {
-        display: flex;
-        min-height: calc(100vh - 56px);
-        padding-top: 0;
-    }
+  .rev-stat-value {
+    font-family: 'Poppins', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--saaf-heading);
+    line-height: 1.1;
+  }
+  .rev-stat-label {
+    font-size: .74rem;
+    color: var(--saaf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    font-weight: 600;
+    margin-top: .3rem;
+  }
+  .rev-stat-badge {
+    position: absolute;
+    top: 1.1rem; right: 1.1rem;
+    font-size: .68rem;
+    padding: .22rem .6rem;
+    border-radius: 20px;
+    font-weight: 700;
+  }
+  .rbadge-up   { background: rgba(76,175,125,.14); color: #2e7a56; }
+  .rbadge-info { background: rgba(91,141,238,.13); color: #2a54b8; }
 
-    /* Sidebar - Fixed on Left */
-    .sidebar {
-        position: fixed;
-        left: 0;
-        top: 56px;
-        width: 230px;
-        height: calc(100vh - 56px);
-        background: var(--card-bg);
-        border-right: 1px solid var(--border-light);
-        padding: 24px 14px;
-        overflow-y: auto;
-        z-index: 100;
-    }
+  /* ── Panel card (chart / table) ── */
+  .rev-panel {
+    position: relative;
+    z-index: 1;
+    background: var(--saaf-card-bg);
+    border: 1px solid var(--saaf-border);
+    border-radius: 18px;
+    padding: 1.5rem 1.6rem;
+    box-shadow: var(--saaf-shadow-sm);
+  }
+  .rev-panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--saaf-heading);
+    margin-bottom: 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: .5rem;
+  }
+  .rev-panel-title small {
+    font-size: .76rem;
+    font-weight: 400;
+    color: var(--saaf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .07em;
+  }
 
-    .sidebar-profile {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--border-light);
-    }
+  /* ── Progress bar ── */
+  .rev-goal-bar {
+    height: 6px;
+    border-radius: 4px;
+    background: var(--saaf-beige);
+    overflow: hidden;
+    margin: .5rem 0 .35rem;
+  }
+  .rev-goal-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--saaf-btn), #e8a870);
+    transition: width 1.2s cubic-bezier(.4,0,.2,1);
+  }
 
-    .sidebar-avatar {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: #d9b9a8;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 700;
-        font-size: 1.2rem;
-        flex-shrink: 0;
-    }
+  /* ── Table ── */
+  .rev-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .rev-table thead th {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .09em;
+    color: var(--saaf-text-muted);
+    font-weight: 700;
+    padding: .6rem 1rem;
+    border-bottom: 1px solid var(--saaf-border);
+    background: var(--saaf-beige);
+    white-space: nowrap;
+  }
+  .rev-table thead th:first-child { border-radius: 8px 0 0 8px; }
+  .rev-table thead th:last-child  { border-radius: 0 8px 8px 0; }
+  .rev-table tbody tr { transition: background .15s; }
+  .rev-table tbody tr:hover td { background: rgba(250,241,229,.6); }
+  .rev-table tbody td {
+    padding: .9rem 1rem;
+    font-size: .87rem;
+    border-bottom: 1px solid rgba(96,70,51,.07);
+    color: var(--saaf-body);
+    vertical-align: middle;
+  }
+  .rev-table tbody tr:last-child td { border-bottom: none; }
 
-    .sidebar-profile-text h5 {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #2c1f1a;
-        margin: 0;
-    }
+  /* Status pills */
+  .rev-pill {
+    display: inline-flex; align-items: center; gap: .3rem;
+    padding: .25rem .7rem;
+    border-radius: 20px;
+    font-size: .72rem;
+    font-weight: 700;
+  }
+  .rev-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  .pill-earned  { background: rgba(76,175,125,.13);  color: #2b7a52; }
+  .pill-paid    { background: rgba(91,141,238,.12);  color: #2244a8; }
+  .pill-pending { background: rgba(212,169,45,.13);  color: #7a5a00; }
 
-    .sidebar-profile-text small {
-        color: #8b7461;
-        font-size: 0.75rem;
-        display: block;
-        margin-top: 2px;
-    }
+  /* ── Empty state ── */
+  .rev-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: var(--saaf-text-muted);
+  }
+  .rev-empty i { font-size: 2.2rem; opacity: .35; margin-bottom: .65rem; display: block; }
 
-    .sidebar-nav {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-    }
+  /* ── Quick stats inside panel ── */
+  .rev-qs-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem 0;
+    border-bottom: 1px solid rgba(96,70,51,.07);
+    font-size: .87rem;
+  }
+  .rev-qs-row:last-child { border-bottom: none; }
+  .rev-qs-row span { color: var(--saaf-body); }
+  .rev-qs-row strong { color: var(--saaf-heading); font-weight: 700; }
 
-    .sidebar-nav a {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        padding: 10px 12px;
-        border-radius: 8px;
-        text-decoration: none;
-        color: #3d3430;
-        font-size: 0.95rem;
-        transition: background 0.2s;
-        position: relative;
-    }
+  /* ── Dark mode overrides ── */
+  [data-theme="dark"] .rev-stat-card,
+  [data-theme="dark"] .rev-panel {
+    background: linear-gradient(180deg, rgba(74,56,39,.9), rgba(56,41,30,.92));
+    border-color: rgba(219,191,155,.12);
+  }
+  [data-theme="dark"] .rev-stat-value,
+  [data-theme="dark"] .rev-panel-title { color: var(--saaf-cream-text); }
+  [data-theme="dark"] .rev-table thead th { background: rgba(56,41,30,.9); }
+  [data-theme="dark"] .rev-table tbody tr:hover td { background: rgba(255,248,238,.04); }
+  [data-theme="dark"] .rev-goal-bar { background: rgba(219,191,155,.18); }
+  [data-theme="dark"] .rbadge-up  { background: rgba(76,175,125,.18); color: #68d4a0; }
+  [data-theme="dark"] .rbadge-info { background: rgba(91,141,238,.18); color: #8eb3f5; }
+  [data-theme="dark"] .rev-qs-row span  { color: var(--saaf-body); }
+  [data-theme="dark"] .rev-qs-row strong { color: var(--saaf-cream-text); }
+  [data-theme="dark"] .rev-table tbody td { color: var(--saaf-body); border-color: rgba(219,191,155,.07); }
+  [data-theme="dark"] .pill-earned  { background: rgba(76,175,125,.18);  color: #68d4a0; }
+  [data-theme="dark"] .pill-paid    { background: rgba(91,141,238,.18);  color: #8eb3f5; }
+  [data-theme="dark"] .pill-pending { background: rgba(212,169,45,.18);  color: #f0c84a; }
 
-    .sidebar-nav a:hover {
-        background: #f7efe7;
-    }
+  /* ── Page header ── */
+  .rev-page-header {
+    background: linear-gradient(145deg, rgba(245,240,230,.96), rgba(224,210,180,.6));
+    border: 1px solid var(--saaf-border);
+    border-radius: 20px;
+    padding: 1.4rem 1.6rem;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+  }
+  .rev-page-header::after {
+    content: "";
+    position: absolute;
+    inset: auto -3rem -4rem auto;
+    width: 14rem; height: 14rem;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(199,122,92,.18) 0%, transparent 70%);
+  }
+  [data-theme="dark"] .rev-page-header {
+    background: linear-gradient(145deg, rgba(56,41,30,.9), rgba(44,33,26,.92));
+    border-color: rgba(219,191,155,.14);
+  }
 
-    .sidebar-nav a.active {
-        background: #f0e5d9;
-        font-weight: 600;
-    }
-
-    .sidebar-nav a i {
-        font-size: 1.1rem;
-        min-width: 20px;
-    }
-
-    .sidebar-badge {
-        margin-left: auto;
-        background: var(--primary);
-        color: #fff;
-        padding: 3px 8px;
-        border-radius: 999px;
-        font-size: 0.75rem;
-        font-weight: 700;
-    }
-
-    /* Main Content */
-    .main-content {
-        margin-left: 230px;
-        flex: 1;
-        padding: 24px 32px;
-        width: calc(100% - 230px);
-        overflow-y: auto;
-    }
-
-    /* Page Header */
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 24px;
-        gap: 20px;
-    }
-
-    .header-left h1 {
-        font-size: 2.2rem;
-        font-weight: 700;
-        color: #2c1f1a;
-        margin-top: 12px;
-        margin-bottom: 8px;
-    }
-
-    .header-label {
-        display: inline-block;
-        background: var(--dark-header);
-        color: var(--primary);
-        padding: 6px 12px;
-        border-radius: 8px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-
-    .header-subtitle {
-        color: var(--text-muted);
-        font-size: 0.95rem;
-        margin-top: 4px;
-    }
-
-    .header-right {
-        text-align: right;
-    }
-
-    /* Stats Grid */
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
-        margin-bottom: 32px;
-    }
-
-    .stat-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-light);
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 0 rgba(0, 0, 0, 0.01);
-    }
-
-    .stat-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        background: #f7efe7;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--primary);
-        font-size: 1.4rem;
-        margin-bottom: 12px;
-    }
-
-    .stat-number {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #2c1f1a;
-        margin-bottom: 6px;
-    }
-
-    .stat-label {
-        font-size: 0.9rem;
-        color: var(--text-muted);
-        margin-bottom: 8px;
-    }
-
-    .stat-detail {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-    }
-
-    .stat-detail.positive {
-        color: #27ae60;
-    }
-
-    /* Section */
-    .section-title {
-        font-size: 1.1rem;
-        font-weight: 700;
-        color: #2c1f1a;
-        margin: 28px 0 16px 0;
-    }
-
-    .section-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 16px;
-    }
-
-    .section-header .see-all {
-        color: var(--primary);
-        text-decoration: none;
-        font-size: 0.9rem;
-        font-weight: 600;
-    }
-
-    /* Chart Card */
-    .chart-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-light);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 32px;
-    }
-
-    #earningsChart {
-        max-height: 200px;
-    }
-
-    /* Order/Proposal Card */
-    .order-card {
-        background: var(--card-bg);
-        border: 1px solid var(--border-light);
-        border-radius: 10px;
-        padding: 16px;
-        margin-bottom: 12px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .order-card.highlight {
-        border-left: 4px solid var(--primary);
-    }
-
-    .order-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 8px;
-        background: #f7efe7;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #8b7461;
-        flex-shrink: 0;
-    }
-
-    .order-info h6 {
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #2c1f1a;
-        margin: 0 0 4px 0;
-    }
-
-    .order-info p {
-        font-size: 0.85rem;
-        color: var(--text-muted);
-        margin: 0;
-    }
-
-    .order-right {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        margin-left: auto;
-    }
-
-    .order-warning {
-        color: #ff9800;
-        font-size: 0.85rem;
-        font-weight: 600;
-    }
-
-    .badge-status {
-        display: inline-block;
-        padding: 6px 12px;
-        border-radius: 6px;
-        font-size: 0.8rem;
-        font-weight: 600;
-    }
-
-    .badge-in-progress {
-        background: #fff3e0;
-        color: #e65100;
-    }
-
-    .badge-pending {
-        background: #f0f0f0;
-        color: #666;
-    }
-
-    .badge-rejected {
-        background: #ffebee;
-        color: #c62828;
-    }
-
-    .badge-sourcing {
-        background: #f0f0f0;
-        color: #666;
-    }
-
-    /* Responsive */
-    @media (max-width: 1200px) {
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-        }
-    }
-
-    @media (max-width: 768px) {
-        .sidebar {
-            width: 80px;
-            padding: 12px 6px;
-        }
-
-        .sidebar-profile {
-            justify-content: center;
-            margin-bottom: 12px;
-        }
-
-        .sidebar-profile-text {
-            display: none;
-        }
-
-        .sidebar-nav a span {
-            display: none;
-        }
-
-        .sidebar-badge {
-            display: none;
-        }
-
-        .main-content {
-            margin-left: 80px;
-            width: calc(100% - 80px);
-            padding: 16px;
-        }
-
-        .page-header {
-            flex-direction: column;
-        }
-
-        .stats-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-        }
-
-        .stat-card {
-            padding: 16px;
-        }
-    }
+  @media (max-width: 767.98px) {
+    .rev-stat-value { font-size: 1.5rem; }
+    .rev-page-header { padding: 1.1rem; }
+    .rev-panel { padding: 1.1rem 1rem; }
+  }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="dashboard-container">
-    <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="sidebar-profile">
-            <div class="sidebar-avatar">{{ artisan.user.first_name|slice:":1"|default:'A' }}</div>
-            <div class="sidebar-profile-text">
-                <h5>{{ artisan.user.first_name }} {{ artisan.user.last_name }}</h5>
-                <small>ARTISAN</small>
-            </div>
-        </div>
+<div class="saaf-main rev-shell">
+  <div class="container-fluid px-0">
 
-        <nav class="sidebar-nav">
-            <a href="{% url 'account:artisan_dashboard_view' %}" class="active">
-                <i class="bi bi-house-door-fill"></i>
-                <span>Dashboard</span>
-            </a>
-            <a href="{% url 'request:request_list_view' %}">
-                <i class="bi bi-search"></i>
-                <span>Browse Requests</span>
-                <span class="sidebar-badge">{{ stats.open_requests }}</span>
-            </a>
-            <a href="#">
-                <i class="bi bi-box-seam"></i>
-                <span>Active Orders</span>
-                <span class="sidebar-badge">{{ stats.active_orders }}</span>
-            </a>
-            <a href="{% url 'proposal:my_proposals_view' %}">
-                <i class="bi bi-clipboard-check"></i>
-                <span>My Proposals</span>
-                <!-- <span class="sidebar-badge">{{ stats.my_proposals }}</span> -->
-            </a>
-            <a href="{% url 'account:completed_orders_view' %}">
-                <i class="bi bi-check-circle-fill"></i>
-                <span>Completed</span>
-            </a>
-            <a href="{% url 'message:conversation_list_view' %}">
-                <i class="bi bi-chat-dots"></i>
-                <span>Messages</span>
-                <!-- <span class="sidebar-badge">{{ stats.messages }}</span> -->
-            </a>
-            <a href="{% url 'workshop:workshop_detail_view' artisan_id=request.user.id %}">
-                <i class="bi bi-images"></i>
-                <span>My Profile</span>
-            </a>
-            <a href="{% url 'payment:my_cards' %}">
-                <i class="bi bi-cash-coin"></i>
-                <span>Earnings</span>
-            </a>
-            <a href="{% url 'account:logout_view' %}">
-                <i class="bi bi-box-arrow-left"></i>
-                <span>Sign Out</span>
-            </a>
-        </nav>
-    </aside>
+    <!-- ── Page Header ───────────────────── -->
+    <div class="rev-panel mb-4">
+  <div class="rev-panel-title">
+    <span>
+      <i class="bi bi-stripe me-1" style="color:var(--saaf-btn);"></i>
+      {% if LANGUAGE_CODE == 'ar' %}مدفوعات Stripe{% else %}Stripe Payouts{% endif %}
+    </span>
+    <small>
+      {% if stripe_connected %}
+        {% if stripe_payouts_enabled %}
+          {% if LANGUAGE_CODE == 'ar' %}جاهز للسحب{% else %}Payouts enabled{% endif %}
+        {% else %}
+          {% if LANGUAGE_CODE == 'ar' %}يتطلب استكمال{% else %}Setup required{% endif %}
+        {% endif %}
+      {% else %}
+        {% if LANGUAGE_CODE == 'ar' %}غير متصل{% else %}Not connected{% endif %}
+      {% endif %}
+    </small>
+  </div>
 
-    <!-- Main Content -->
-    <main class="main-content">
-        <!-- Page Header -->
-        <div class="page-header">
-            <div class="header-left">
-                <!-- <div class="header-label">PAGE 12 OF 16 — ARTISAN DASHBOARD: EARNINGS, ORDERS, PROPOSALS PREVIEW,
-                    MATCHING REQUESTS FEED</div> -->
-                <h1>Welcome back, {{ artisan.user.first_name }}</h1>
-                <p class="header-subtitle">{{ stats.open_requests }} open requests match your skills right now.</p>
-            </div>
-            <div class="header-right">
-                <a href="{% url 'request:request_list_view' %}" class="btn btn-outline-primary">Browse Open Requests
-                    →</a>
-            </div>
-        </div>
-
-        <!-- Stats Grid -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">💰</div>
-                <div class="stat-number">SAR {{ stats.earnings_this_month|floatformat:0 }}</div>
-                <div class="stat-label">Earned This Month</div>
-                <div class="stat-detail positive">↑ {{ stats.earnings_growth_percent }}% vs last month</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">📋</div>
-                <div class="stat-number">{{ stats.active_orders }}</div>
-                <div class="stat-label">Active Orders</div>
-                <div class="stat-detail">{{ stats.photos_awaiting }} awaiting photo upload</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">⭐</div>
-                <div class="stat-number">{{ stats.rating }}</div>
-                <div class="stat-label">Your Rating</div>
-                <div class="stat-detail">Based on {{ stats.rating_reviews }} reviews</div>
-            </div>
-
-            <div class="stat-card">
-                <div class="stat-icon">📊</div>
-                <div class="stat-number">{{ stats.open_requests }}</div>
-                <div class="stat-label">Open Requests</div>
-                <div class="stat-detail">Matching your skills</div>
-            </div>
-        </div>
-
-        <!-- Chart -->
-        <div class="section-title">Earnings (6 months)</div>
-        <div class="chart-card">
-            <canvas id="earningsChart" height="110"></canvas>
-        </div>
-
-        <!-- Active Orders -->
-        <div class="section-header">
-            <div class="section-title" style="margin: 0;">Active Orders</div>
-            <!-- <a href="{% url 'workshop:workshop_detail_view' artisan_id=request.user.id %}" class="see-all">View all →</a> -->
-        </div>
-
-        {% for contract in active_contracts %}
-        <div class="order-card {% if forloop.first %}highlight{% endif %}">
-            <div class="order-icon">🪑</div>
-            <div class="order-info">
-                <h6>{{ contract.proposal.request.title }}</h6>
-                <p>{{ contract.proposal.request.requester.get_full_name }} · SAR {{ contract.proposal.price }}{% if contract.completed_at %} · Due {{ contract.completed_at|date:"M j" }}{% endif %}</p>
-            </div>
-            <div class="order-right">
-                {% if contract.is_in_progress %}
-                    <a href="{% url 'progress:contract_detail_view' contract.id %}" class="order-warning">⚠ Upload progress photo</a>
-                    <a href="{% url 'progress:contract_detail_view' contract.id %}" class="badge-status badge-in-progress">In Progress</a>
-                {% elif contract.is_completion_requested %}
-                    <span class="badge-status badge-pending">Completion Requested</span>
-                {% else %}
-                    <span class="badge-status badge-sourcing">Sourcing Materials</span>
-                {% endif %}
-            </div>
-        </div>
-        {% empty %}
-        <p class="stat-detail">No active orders currently.</p>
-        {% endfor %}
-        <!-- Completed Orders -->
-        
-        <div class="section-header" style="margin-top:28px;">
-            <div class="section-title" style="margin:0;">
-                Completed Orders
-            </div>
-            <a href="{% url 'account:completed_orders_view' %}">
-                View All
-            </a>
-        </div>
-        
-        {% for contract in completed_orders %}
-        
-        <div class="order-card">
-        
-            <div class="order-icon">
-                ✅
-            </div>
-        
-            <div class="order-info">
-        
-                <h6>
-                    {{ contract.proposal.request.title }}
-                </h6>
-        
-                <p>
-        
-                    Customer:
-                    {{ contract.requester.get_full_name }}
-        
-                    <br>
-        
-                    Amount:
-                    SAR {{ contract.proposal.price }}
-        
-                    <br>
-        
-                    Completed:
-                    {{ contract.completed_at|date:"M d, Y" }}
-        
-                </p>
-        
-            </div>
-        
-            <div class="order-right">
-        
-                <span class="badge-status badge-in-progress">
-                    Completed
-                </span>
-        
-            </div>
-        
-        </div>
-        
-        {% empty %}
-        
-        <p class="stat-detail">
-            No completed orders yet
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3">
+    <div>
+      {% if stripe_connected %}
+        {% if stripe_payouts_enabled %}
+          <p class="mb-1" style="color:var(--saaf-heading);font-weight:700;">
+            {% if LANGUAGE_CODE == 'ar' %}حساب Stripe الخاص بك جاهز لاستقبال الدفعات.{% else %}Your Stripe account is ready to receive payouts.{% endif %}
+          </p>
+          <p class="mb-0" style="font-size:.85rem;color:var(--saaf-text-muted);">
+            {% if LANGUAGE_CODE == 'ar' %}يمكنك فتح لوحة Stripe لإدارة الدفعات والحساب البنكي.{% else %}You can open Stripe to manage payouts, banking, and account details.{% endif %}
+          </p>
+        {% else %}
+          <p class="mb-1" style="color:var(--saaf-heading);font-weight:700;">
+            {% if LANGUAGE_CODE == 'ar' %}حساب Stripe يحتاج إلى بعض المعلومات الإضافية.{% else %}Your Stripe account needs some additional information.{% endif %}
+          </p>
+          <p class="mb-0" style="font-size:.85rem;color:var(--saaf-text-muted);">
+            {{ stripe_status_message }}
+          </p>
+        {% endif %}
+      {% else %}
+        <p class="mb-1" style="color:var(--saaf-heading);font-weight:700;">
+          {% if LANGUAGE_CODE == 'ar' %}اربط Stripe لتلقي الأرباح وتحويلها إلى حسابك.{% else %}Connect Stripe to receive earnings and payouts to your bank account.{% endif %}
         </p>
-        
-        {% endfor %}
-        <!-- My Proposals -->
-        <div class="section-header" style="margin-top: 28px;">
-            <div class="section-title" style="margin: 0;">My Proposals</div>
-            <a href="{% url 'proposal:my_proposals_view' %}" class="see-all">View all →</a>
-        </div>
+        <p class="mb-0" style="font-size:.85rem;color:var(--saaf-text-muted);">
+          {% if LANGUAGE_CODE == 'ar' %}سيتم توجيهك إلى Stripe لإعداد حساب الاستلام الخاص بك.{% else %}You’ll be redirected to Stripe to complete your payout setup.{% endif %}
+        </p>
+      {% endif %}
+    </div>
 
-        {% for prop in my_proposals %}
-        <div class="order-card">
-            <div class="order-icon">📚</div>
-            <div class="order-info">
-                <h6>{{ prop.request.title }}</h6>
-                <p style="font-size: 0.8rem;">Bid: SAR {{ prop.price }}</p>
+    <div class="d-flex gap-2 flex-wrap">
+      {% if stripe_connected %}
+        {% if stripe_payouts_enabled %}
+          <a href="{% url 'account:artisan_connect_stripe_view' %}" class="btn btn-saaf-primary rounded-pill">
+            <i class="bi bi-box-arrow-up-right me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}فتح Stripe{% else %}Open Stripe{% endif %}
+          </a>
+        {% else %}
+          <a href="{% url 'account:artisan_connect_stripe_refresh_view' %}" class="btn btn-saaf-primary rounded-pill">
+            <i class="bi bi-arrow-repeat me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}متابعة الإعداد{% else %}Continue Setup{% endif %}
+          </a>
+        {% endif %}
+      {% else %}
+        <a href="{% url 'account:artisan_connect_stripe_view' %}" class="btn btn-saaf-primary rounded-pill">
+          <i class="bi bi-stripe me-1"></i>
+          {% if LANGUAGE_CODE == 'ar' %}ربط Stripe{% else %}Connect Stripe{% endif %}
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+    <div class="rev-page-header mb-4">
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-3">
+        <div>
+          <div class="saaf-eyebrow mb-1">
+            <i class="bi bi-bar-chart-line me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}لوحة الأرباح{% else %}Earnings Dashboard{% endif %}
+          </div>
+          <h2 class="saaf-section-title mb-1" style="font-size:1.65rem;">
+            {% if LANGUAGE_CODE == 'ar' %}مرحباً،{% else %}Welcome back,{% endif %}
+            {{ request.user.get_full_name|default:request.user.username }}
+          </h2>
+          <p class="mb-0" style="font-size:.88rem;color:var(--saaf-text-muted);">
+            {% if LANGUAGE_CODE == 'ar' %}نظرة عامة على أرباحك ومدفوعاتك{% else %}Here's your financial overview at a glance{% endif %}
+          </p>
+        </div>
+        <div class="d-flex gap-2 align-items-center flex-wrap" style="position:relative;z-index:1;">
+          <a href="#" class="btn btn-saaf-outline rounded-pill" style="font-size:.87rem;">
+            <i class="bi bi-download me-1"></i>
+            {% if LANGUAGE_CODE == 'ar' %}تصدير{% else %}Export{% endif %}
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Stat Cards ────────────────────── -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-6 col-lg-3">
+        <div class="rev-stat-card">
+          <div class="rev-stat-icon"><i class="bi bi-wallet2"></i></div>
+          <div class="rev-stat-value">{{ current_balance|floatformat:2 }}</div>
+          <div class="rev-stat-label">
+            {% if LANGUAGE_CODE == 'ar' %}الرصيد الحالي{% else %}Current Balance{% endif %}
+          </div>
+          <span class="rev-stat-badge rbadge-up">
+            <i class="bi bi-check-circle me-1"></i>{% if LANGUAGE_CODE == 'ar' %}متاح{% else %}Available{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="rev-stat-card accent-green">
+          <div class="rev-stat-icon"><i class="bi bi-currency-dollar"></i></div>
+          <div class="rev-stat-value">{{ total_earned|floatformat:2 }}</div>
+          <div class="rev-stat-label">
+            {% if LANGUAGE_CODE == 'ar' %}إجمالي الأرباح{% else %}Total Earned{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="rev-stat-card accent-blue">
+          <div class="rev-stat-icon"><i class="bi bi-send-check-fill"></i></div>
+          <div class="rev-stat-value">{{ total_paid|floatformat:2 }}</div>
+          <div class="rev-stat-label">
+            {% if LANGUAGE_CODE == 'ar' %}إجمالي المدفوع{% else %}Total Paid Out{% endif %}
+          </div>
+          <span class="rev-stat-badge rbadge-info">
+            {% if LANGUAGE_CODE == 'ar' %}محول{% else %}Transferred{% endif %}
+          </span>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="rev-stat-card accent-amber">
+          <div class="rev-stat-icon"><i class="bi bi-calendar2-week-fill"></i></div>
+          <div class="rev-stat-value">{{ this_month_total|floatformat:2 }}</div>
+          <div class="rev-stat-label">
+            {% if LANGUAGE_CODE == 'ar' %}هذا الشهر{% else %}This Month{% endif %}
+          </div>
+          <span class="rev-stat-badge" style="background:rgba(212,169,45,.13);color:#7a5a00;">
+            {{ this_month_jobs }}
+            {% if LANGUAGE_CODE == 'ar' %}عمل{% else %}job{{ this_month_jobs|pluralize }}{% endif %}
+          </span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Chart + Quick Stats ───────────── -->
+    <div class="row g-3 mb-4">
+
+      <div class="col-12 col-lg-8">
+        <div class="rev-panel h-100">
+          <div class="rev-panel-title">
+            <span>
+              <i class="bi bi-graph-up me-1" style="color:var(--saaf-btn);"></i>
+              {% if LANGUAGE_CODE == 'ar' %}الأرباح الشهرية{% else %}Monthly Revenue{% endif %}
+            </span>
+            <small>{% if LANGUAGE_CODE == 'ar' %}آخر 12 شهر{% else %}Last 12 months{% endif %}</small>
+          </div>
+          <div style="position:relative;height:230px;">
+            <canvas id="revChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-lg-4">
+        <div class="rev-panel h-100 d-flex flex-column" style="gap:1.2rem;">
+
+          <div>
+            <div class="d-flex justify-content-between align-items-center mb-1">
+              <span style="font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--saaf-text-muted);">
+                {% if LANGUAGE_CODE == 'ar' %}نسبة السحب{% else %}Payout Progress{% endif %}
+              </span>
+              <span style="font-size:.8rem;color:var(--saaf-btn);font-weight:700;">
+                {% if total_earned > 0 %}{{ total_paid|floatformat:0 }} / {{ total_earned|floatformat:0 }}{% else %}—{% endif %}
+              </span>
             </div>
-            <div class="order-right">
-                {% if prop.status == 'pending' %}
-                    <span class="badge-status badge-pending">Pending</span>
-                {% elif prop.status == 'rejected' %}
-                    <span class="badge-status badge-rejected">Rejected</span>
+            <div class="rev-goal-bar">
+              <div class="rev-goal-fill" id="payoutBar" style="width:0%;"></div>
+            </div>
+            <div style="font-size:.74rem;color:var(--saaf-text-muted);">
+              {% if total_earned > 0 %}
+                {{ total_paid|floatformat:2 }} {% if LANGUAGE_CODE == 'ar' %}من أصل{% else %}of{% endif %} {{ total_earned|floatformat:2 }}
+              {% else %}
+                {% if LANGUAGE_CODE == 'ar' %}لا توجد أرباح بعد{% else %}No earnings yet{% endif %}
+              {% endif %}
+            </div>
+          </div>
+
+          <div>
+            <div class="rev-panel-title" style="margin-bottom:.75rem;font-size:.88rem;">
+              {% if LANGUAGE_CODE == 'ar' %}ملخص الشهر الحالي{% else %}This Month at a Glance{% endif %}
+            </div>
+            <div>
+              <div class="rev-qs-row">
+                <span>{% if LANGUAGE_CODE == 'ar' %}الأعمال المكتملة{% else %}Completed Jobs{% endif %}</span>
+                <strong style="color:var(--saaf-btn);">{{ this_month_jobs }}</strong>
+              </div>
+              <div class="rev-qs-row">
+                <span>{% if LANGUAGE_CODE == 'ar' %}الأرباح{% else %}Revenue{% endif %}</span>
+                <strong style="color:var(--saaf-btn);">{{ this_month_total|floatformat:2 }}</strong>
+              </div>
+              <div class="rev-qs-row">
+                <span>{% if LANGUAGE_CODE == 'ar' %}الرصيد المعلق{% else %}Pending Balance{% endif %}</span>
+                <strong>{{ current_balance|floatformat:2 }}</strong>
+              </div>
+              <div class="rev-qs-row">
+                <span>{% if LANGUAGE_CODE == 'ar' %}إجمالي المدفوع{% else %}Total Paid Out{% endif %}</span>
+                <strong>{{ total_paid|floatformat:2 }}</strong>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+        <!-- Active Requests -->
+    <div class="rev-panel mb-4">
+      <div class="rev-panel-title">
+        <span>
+          <i class="bi bi-hourglass-split me-1" style="color:var(--saaf-btn);"></i>
+          {% if LANGUAGE_CODE == 'ar' %}الطلبات النشطة{% else %}Active Requests{% endif %}
+        </span>
+        <small>{{ active_requests|length }}</small>
+      </div>
+
+      {% if active_requests %}
+        <div class="table-responsive">
+          <table class="rev-table">
+            <thead>
+              <tr>
+                <th>{% if LANGUAGE_CODE == 'ar' %}العنوان{% else %}Title{% endif %}</th>
+                <th>{% if LANGUAGE_CODE == 'ar' %}العميل{% else %}Requester{% endif %}</th>
+                <th>{% if LANGUAGE_CODE == 'ar' %}السعر{% else %}Price{% endif %}</th>
+                <th>{% if LANGUAGE_CODE == 'ar' %}الحالة{% else %}Status{% endif %}</th>
+                <th class="text-end">{% if LANGUAGE_CODE == 'ar' %}تفاصيل{% else %}Details{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for contract in active_requests %}
+              <tr>
+                <td>
+                  <div style="font-weight:700;color:var(--saaf-heading);">
+                    {{ contract.proposal.request.title }}
+                  </div>
+                  <div style="font-size:.74rem;color:var(--saaf-text-muted);">
+                    #{{ contract.id }}
+                  </div>
+                </td>
+                <td>{{ contract.proposal.request.requester.get_full_name|default:contract.proposal.request.requester.username }}</td>
+                <td>{{ contract.proposal.price|floatformat:2 }}</td>
+                <td>
+                  <span class="rev-pill pill-pending">
+                    <span class="rev-pill-dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}قيد التنفيذ{% else %}In Progress{% endif %}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'progress:contract_detail_view' contract.id %}" class="saaf-dashboard-linkline">
+                    {% if LANGUAGE_CODE == 'ar' %}عرض{% else %}View{% endif %}
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="rev-empty">
+          <i class="bi bi-inbox"></i>
+          <p>{% if LANGUAGE_CODE == 'ar' %}لا توجد طلبات نشطة الآن.{% else %}No active requests right now.{% endif %}</p>
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Completed Requests -->
+    <div class="rev-panel mb-4">
+      <div class="rev-panel-title">
+        <span>
+          <i class="bi bi-check2-circle me-1" style="color:var(--saaf-btn);"></i>
+          {% if LANGUAGE_CODE == 'ar' %}الطلبات المكتملة{% else %}Completed Requests{% endif %}
+        </span>
+            <a href="{% url 'account:completed_orders_view' %}" class="saaf-dashboard-linkline" style="font-size:.83rem;">
+          {% if LANGUAGE_CODE == 'ar' %}عرض الكل{% else %}View all{% endif %}
+          <i class="bi bi-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+        </a>
+
+      </div>
+
+      {% if completed_requests %}
+        <div class="table-responsive">
+          <table class="rev-table">
+            <thead>
+              <tr>
+                <th>{% if LANGUAGE_CODE == 'ar' %}العنوان{% else %}Title{% endif %}</th>
+                <th>{% if LANGUAGE_CODE == 'ar' %}العميل{% else %}Requester{% endif %}</th>
+                <th>{% if LANGUAGE_CODE == 'ar' %}السعر{% else %}Price{% endif %}</th>
+                <th>{% if LANGUAGE_CODE == 'ar' %}الحالة{% else %}Status{% endif %}</th>
+                <th class="text-end">{% if LANGUAGE_CODE == 'ar' %}تفاصيل{% else %}Details{% endif %}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for contract in completed_requests %}
+              <tr>
+                <td>
+                  <div style="font-weight:700;color:var(--saaf-heading);">
+                    {{ contract.proposal.request.title }}
+                  </div>
+                  <div style="font-size:.74rem;color:var(--saaf-text-muted);">
+                    #{{ contract.id }}
+                  </div>
+                </td>
+                <td>{{ contract.proposal.request.requester.get_full_name|default:contract.proposal.request.requester.username }}</td>
+                <td>{{ contract.proposal.price|floatformat:2 }}</td>
+                <td>
+                  <span class="rev-pill pill-paid">
+                    <span class="rev-pill-dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}مكتمل{% else %}Completed{% endif %}
+                  </span>
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'progress:contract_detail_view' contract.id %}" class="saaf-dashboard-linkline">
+                    {% if LANGUAGE_CODE == 'ar' %}عرض{% else %}View{% endif %}
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="rev-empty">
+          <i class="bi bi-check2-circle"></i>
+          <p>{% if LANGUAGE_CODE == 'ar' %}لا توجد طلبات مكتملة بعد.{% else %}No completed requests yet.{% endif %}</p>
+        </div>
+      {% endif %}
+    </div>
+    <!-- ── Recent Transactions ───────────── -->
+    <div class="rev-panel">
+      <div class="rev-panel-title">
+        <span>
+          <i class="bi bi-receipt me-1" style="color:var(--saaf-btn);"></i>
+          {% if LANGUAGE_CODE == 'ar' %}آخر المعاملات{% else %}Recent Transactions{% endif %}
+        </span>
+        <a href="#" class="saaf-dashboard-linkline" style="font-size:.83rem;">
+          {% if LANGUAGE_CODE == 'ar' %}عرض الكل{% else %}View all{% endif %}
+          <i class="bi bi-arrow-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}"></i>
+        </a>
+      </div>
+
+      {% if recent_revenues %}
+      <div class="table-responsive">
+        <table class="rev-table">
+          <thead>
+            <tr>
+              <th>{% if LANGUAGE_CODE == 'ar' %}العقد{% else %}Contract{% endif %}</th>
+              <th>{% if LANGUAGE_CODE == 'ar' %}الصافي{% else %}Net Amount{% endif %}</th>
+              <th>{% if LANGUAGE_CODE == 'ar' %}الحالة{% else %}Status{% endif %}</th>
+              <th>{% if LANGUAGE_CODE == 'ar' %}التاريخ{% else %}Date{% endif %}</th>
+              <th class="text-end">{% if LANGUAGE_CODE == 'ar' %}تفاصيل{% else %}Details{% endif %}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for revenue in recent_revenues %}
+            <tr>
+              <td>
+                <div style="font-weight:700;color:var(--saaf-heading);">
+                  {{ revenue.contract.title|default:"—" }}
+                </div>
+                <div style="font-size:.74rem;color:var(--saaf-text-muted);">#{{ revenue.id }}</div>
+              </td>
+              <td>
+                <span style="font-size:1rem;font-weight:700;color:var(--saaf-heading);">
+                  {{ revenue.net_amount|floatformat:2 }}
+                </span>
+              </td>
+              <td>
+                {% if revenue.status == 'paid' %}
+                  <span class="rev-pill pill-paid">
+                    <span class="rev-pill-dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}مدفوع{% else %}Paid{% endif %}
+                  </span>
+                {% elif revenue.status == 'earned' %}
+                  <span class="rev-pill pill-earned">
+                    <span class="rev-pill-dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}مكتسب{% else %}Earned{% endif %}
+                  </span>
+                {% elif revenue.status == 'canceled' %}
+                  <span class="rev-pill" style="background:rgba(192,57,43,.12);color:#a93226;">
+                    <span class="rev-pill-dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}ملغي{% else %}Canceled{% endif %}
+                  </span>
                 {% else %}
-                    <span class="badge-status badge-pending">{{ prop.get_status_display }}</span>
+                  <span class="rev-pill pill-pending">
+                    <span class="rev-pill-dot"></span>
+                    {% if LANGUAGE_CODE == 'ar' %}معلق{% else %}Pending{% endif %}
+                  </span>
                 {% endif %}
-            </div>
-        </div>
-        {% empty %}
-        <p class="stat-detail">You haven't submitted any proposals yet.</p>
-        {% endfor %}
+              </td>
+              <td style="color:var(--saaf-text-muted);font-size:.82rem;white-space:nowrap;">
+                {{ revenue.created_at|date:"M d, Y" }}
+              </td>
+              <td class="text-end">
+                <a href="#" class="saaf-dashboard-linkline" style="font-size:.82rem;">
+                  {% if LANGUAGE_CODE == 'ar' %}عرض{% else %}View{% endif %}
+                  <i class="bi bi-chevron-{% if LANGUAGE_CODE == 'ar' %}left{% else %}right{% endif %}" style="font-size:.7rem;"></i>
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="rev-empty">
+        <i class="bi bi-inbox"></i>
+        <p style="font-size:.88rem;">
+          {% if LANGUAGE_CODE == 'ar' %}لا توجد معاملات بعد. أكمل عقداً لتظهر أرباحك هنا.{% else %}No transactions yet. Complete a contract to see your earnings here.{% endif %}
+        </p>
+      </div>
+      {% endif %}
 
-        <!-- Requests Matching Your Skills -->
-        <div class="section-header" style="margin-top: 28px;">
-            <div class="section-title" style="margin: 0;">Requests Matching Your Skills</div>
-            <a href="{% url 'request:request_list_view' %}" class="see-all">See all →</a>
-        </div>
+    </div>
 
-        {% for req in requests_matching_list %}
-        <div class="order-card">
-            <div class="order-icon">🪑</div>
-            <div class="order-info">
-                <h6>{{ req.title }}</h6>
-                <p>{{ req.requester.get_full_name }} · SAR {{ req.budget_min }}–{{ req.budget_max }} · {{ req.proposals.count }} proposals</p>
-            </div>
-            <div class="order-right">
-                <a href="{% url 'request:request_detail_view' req.id %}" class="btn btn-outline-primary btn-sm">Bid Now</a>
-            </div>
-        </div>
-        {% empty %}
-        <p class="stat-detail">No matching requests at the moment.</p>
-        {% endfor %}
-
-    </main>
+  </div>
 </div>
 {% endblock %}
 
-<!-- {% block extra_js %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        (function(){
-            const labels = [{% for e in stats.earnings_6months %}'{{ e.label }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const data = [{% for e in stats.earnings_6months %}{{ e.total }}{% if not forloop.last %}, {% endif %}{% endfor %}];
-            const ctx = document.getElementById('earningsChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Earnings',
-                        data: data,
-                        backgroundColor: labels.map((l,i)=> i===labels.length-1 ? '#c96f52' : '#e9dccf'),
-                        borderRadius: 8,
-                        barThickness: 36
-                    }]
-                },
-                options: {
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { display: false }, ticks: { color: '#8b7461' } },
-                        y: { display: false }
-                    },
-                    responsive: true,
-                    maintainAspectRatio: false
-                }
-            });
-        })();
-    </script> -->
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  var labels = {{ chart_labels|safe }};
+  var totals = {{ chart_totals|safe }};
+
+  function isDark() {
+    return document.documentElement.getAttribute('data-theme') === 'dark';
+  }
+
+  function buildChart() {
+    var existing = Chart.getChart('revChart');
+    if (existing) existing.destroy();
+
+    var ctx  = document.getElementById('revChart').getContext('2d');
+    var dark = isDark();
+
+    var grad = ctx.createLinearGradient(0, 0, 0, 230);
+    grad.addColorStop(0, dark ? 'rgba(212,139,104,.28)' : 'rgba(199,122,92,.22)');
+    grad.addColorStop(1, 'rgba(199,122,92,.00)');
+
+    return new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels.length ? labels : ['—'],
+        datasets: [{
+          label: '{% if LANGUAGE_CODE == "ar" %}الأرباح{% else %}Revenue{% endif %}',
+          data: totals.length ? totals : [0],
+          fill: true,
+          backgroundColor: grad,
+          borderColor: dark ? '#D48B68' : '#C77A5C',
+          borderWidth: 2.5,
+          pointBackgroundColor: dark ? '#D48B68' : '#C77A5C',
+          pointBorderColor: dark ? '#241B15' : '#FAF1E5',
+          pointBorderWidth: 2.5,
+          pointRadius: 5,
+          tension: 0.42
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: dark ? '#1B140F' : '#3F2D23',
+            titleColor: '#E9D9C3',
+            bodyColor: '#D48B68',
+            padding: 10,
+            callbacks: {
+              label: function(c) { return '  ' + c.parsed.y.toFixed(2); }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: dark ? '#c9b79f' : '#6A5648', font: { size: 11 } }
+          },
+          y: {
+            grid: { color: dark ? 'rgba(219,191,155,.1)' : 'rgba(96,70,51,.07)' },
+            ticks: {
+              color: dark ? '#c9b79f' : '#6A5648',
+              font: { size: 11 },
+              callback: function(v) { return v.toFixed(0); }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  buildChart();
+
+  // Re-render when theme toggles
+  var themeBtn = document.getElementById('saaf-theme-toggle');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', function () {
+      setTimeout(buildChart, 80);
+    });
+  }
+
+  // Payout progress bar
+  var pct = 0;
+  var earned = parseFloat("{{ total_earned }}") || 0;
+  var paid   = parseFloat("{{ total_paid }}")   || 0;
+  if (earned > 0) pct = Math.min((paid / earned) * 100, 100);
+  setTimeout(function () {
+    var bar = document.getElementById('payoutBar');
+    if (bar) bar.style.width = pct + '%';
+  }, 300);
+})();
+</script>
 {% endblock %}

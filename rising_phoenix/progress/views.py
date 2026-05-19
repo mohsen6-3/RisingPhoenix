@@ -16,6 +16,7 @@ from .models import Contract, ContractEvent, ContractEventImage, ProgressComment
 import stripe
 from django.db import transaction
 from account.models import ArtisanRevenue
+from message.models import Message, Conversation
 from request.models import Request
 
 
@@ -305,6 +306,10 @@ def confirm_completion_view(request, contract_id):
         contract.status = Contract.Status.COMPLETED
         contract.completed_at = timezone.now()
         contract.save(update_fields=['status', 'completed_at', 'updated_at'])
+        
+        Conversation.objects.filter(
+            proposal__request=contract.proposal.request
+        ).update(is_active=False)
 
         project_request = contract.proposal.request
         if project_request.status != Request.Status.CLOSED:

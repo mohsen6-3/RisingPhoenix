@@ -118,7 +118,179 @@
     .review-avatar { width:40px; height:40px; border-radius:50%; background:var(--primary); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:700; }
     .review-stars { color:var(--primary); font-size:1.05rem; }
 
-    @media (max-width:992px) { .two-column { grid-template-columns:1fr; } .workshop-header { gap:12px; } }
+    /* Profile-like header + tighter spacing */
+    .saaf-workshop-page {
+        padding-top: 1rem !important;
+        padding-bottom: 1.25rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-profile-shell {
+        margin-bottom: 0.9rem !important;
+        padding-top: 0.7rem !important;
+        padding-bottom: 0.7rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-profile-cover {
+        margin-bottom: 0 !important;
+        border-radius: 18px;
+        border: 1px solid rgba(107, 72, 38, 0.16);
+        box-shadow: 0 12px 28px rgba(30, 20, 12, 0.16);
+    }
+
+    .saaf-workshop-page .saaf-workshop-profile-cover + .saaf-workshop-profile-hero {
+        margin-top: 0;
+        position: relative;
+        z-index: 2;
+        padding-top: 0.8rem;
+        padding-inline: 0.3rem;
+        background: transparent;
+        border: 0;
+        box-shadow: none;
+    }
+
+    .saaf-workshop-page .saaf-workshop-profile-cover + .saaf-workshop-profile-hero .saaf-profile-avatar-wrap {
+        margin-top: -66px;
+        margin-inline-end: 0.65rem;
+    }
+
+    .saaf-workshop-page .saaf-workshop-avatar {
+        width: 108px;
+        height: 108px;
+        border-width: 4px;
+        border-style: solid;
+        border-color: rgba(247, 239, 228, 0.95);
+        box-shadow: 0 10px 24px rgba(26, 18, 10, 0.18);
+    }
+
+    .saaf-workshop-page .saaf-profile-hero-main {
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        grid-template-areas:
+            "avatar heading"
+            "meta meta";
+        column-gap: 1rem;
+        row-gap: 0.45rem;
+        align-items: start;
+    }
+
+    .saaf-workshop-page .saaf-profile-avatar-wrap {
+        grid-area: avatar;
+    }
+
+    .saaf-workshop-page .saaf-profile-heading-block {
+        grid-area: heading;
+        min-width: 0;
+    }
+
+    .saaf-workshop-page .saaf-profile-meta {
+        grid-area: meta;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        padding-inline-start: 0.2rem;
+    }
+
+    .saaf-workshop-page .saaf-profile-status-list {
+        align-items: center;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.45rem;
+        margin: 0;
+    }
+
+    .saaf-workshop-page .saaf-profile-status-list .saaf-profile-pill {
+        padding: 0.38rem 0.68rem;
+        font-size: 0.8rem;
+    }
+
+    .saaf-workshop-page .saaf-profile-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .saaf-workshop-page .saaf-profile-actions .btn {
+        min-height: 36px;
+        padding-block: 0.38rem;
+    }
+
+    .saaf-workshop-page .saaf-profile-heading-block .saaf-section-title {
+        margin-bottom: 0.2rem !important;
+        line-height: 1.08;
+    }
+
+    .saaf-workshop-page .saaf-profile-username {
+        margin-bottom: 0.15rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-grid {
+        gap: 0.7rem;
+    }
+
+    .saaf-workshop-page .saaf-dashboard-card.rounded-4 {
+        margin-bottom: 0.7rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-section-head {
+        margin-bottom: 0.55rem !important;
+    }
+
+    .saaf-workshop-page .saaf-profile-bio-card {
+        margin-top: 0.65rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-pagination {
+        margin-top: 0.65rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-side .saaf-dashboard-card {
+        padding: 1rem !important;
+    }
+
+    .saaf-workshop-page .saaf-workshop-main .saaf-dashboard-card {
+        padding: 1rem !important;
+    }
+
+    @media (max-width:992px) {
+        .two-column { grid-template-columns:1fr; }
+        .workshop-header { gap:12px; }
+
+        .saaf-workshop-page .saaf-workshop-profile-cover + .saaf-workshop-profile-hero {
+            margin-top: 0;
+            padding-top: 0.6rem;
+        }
+
+        .saaf-workshop-page .saaf-workshop-profile-cover + .saaf-workshop-profile-hero .saaf-profile-avatar-wrap {
+            margin-top: -52px;
+        }
+
+        .saaf-workshop-page .saaf-profile-hero-main {
+            grid-template-columns: 1fr;
+            grid-template-areas:
+                "avatar"
+                "heading"
+                "meta";
+            row-gap: 0.55rem;
+        }
+
+        .saaf-workshop-page .saaf-profile-avatar-wrap {
+            justify-self: start;
+        }
+
+        .saaf-workshop-page .saaf-workshop-avatar {
+            width: 92px;
+            height: 92px;
+        }
+
+        .saaf-workshop-page .saaf-profile-meta,
+        .saaf-workshop-page .saaf-profile-actions {
+            justify-content: flex-start;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -143,30 +315,39 @@
                         <p class="saaf-profile-joined mb-0">{{ workshop.location|default:"Riyadh" }}</p>
                     </div>
 
-                    <div class="saaf-profile-status-list">
-                        {% if artisan.is_verified %}
-                        <span class="saaf-profile-pill saaf-profile-pill--ok"><i class="bi bi-patch-check-fill"></i> Verified Artisan</span>
+                    <div class="saaf-profile-meta">
+                        <div class="saaf-profile-status-list">
+                            {% if artisan.is_verified %}
+                            <span class="saaf-profile-pill saaf-profile-pill--ok"><i class="bi bi-patch-check-fill"></i> Verified Artisan</span>
+                            {% endif %}
+                            <span class="saaf-profile-pill"><i class="bi bi-star-fill"></i> {{ artisan.average_rating }} Rating</span>
+                            <span class="saaf-profile-pill"><i class="bi bi-briefcase-fill"></i> {{ completed_orders_count }} Completed</span>
+                        </div>
+
+                        {% if can_edit_portfolio %}
+                        <div class="saaf-profile-actions">
+                            <a href="{% url 'workshop:create_workshop_view' %}" class="btn btn-saaf-outline rounded-pill">Edit Workshop</a>
+                            <a href="{% url 'workshop:upload_portfolio_view' %}" class="btn btn-saaf-primary rounded-pill">Manage Portfolio</a>
+                        </div>
                         {% endif %}
-                        <span class="saaf-profile-pill"><i class="bi bi-star-fill"></i> {{ artisan.average_rating }} Rating</span>
-                        <span class="saaf-profile-pill"><i class="bi bi-briefcase-fill"></i> {{ completed_orders_count }} Completed</span>
                     </div>
                 </div>
             </div>
 
             <div class="row g-3 g-md-4 mt-1">
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg-4">
                     <div class="saaf-info-card saaf-profile-info-card h-100">
                         <span class="saaf-info-label">Turnaround</span>
                         <p class="mb-0">{{ workshop.details.typical_turnaround|default:"3-10 days" }}</p>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg-4">
                     <div class="saaf-info-card saaf-profile-info-card h-100">
                         <span class="saaf-info-label">Active Orders</span>
                         <p class="mb-0">{{ active_orders_count }}</p>
                     </div>
                 </div>
-                <div class="col-sm-6 col-lg-3">
+                <div class="col-sm-6 col-lg-4">
                     <div class="saaf-info-card saaf-profile-info-card h-100">
                         <span class="saaf-info-label">Ships KSA</span>
                         <p class="mb-0">{% if workshop.details.ships_ksa %}Yes{% else %}No{% endif %}</p>
@@ -186,12 +367,6 @@
                 </div>
             </div>
 
-            {% if can_edit_portfolio %}
-            <div class="d-flex flex-wrap gap-2 mt-4 pt-1">
-                <a href="{% url 'workshop:create_workshop_view' %}" class="btn btn-saaf-outline rounded-pill">Edit Workshop</a>
-                <a href="{% url 'workshop:upload_portfolio_view' %}" class="btn btn-saaf-primary rounded-pill">Manage Portfolio</a>
-            </div>
-            {% endif %}
         </div>
 
         <div class="saaf-workshop-grid">

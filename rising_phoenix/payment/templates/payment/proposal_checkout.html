@@ -1,7 +1,7 @@
 {% extends "main/base.html" %}
 {% load static %}
 
-{% block title %}Accept Contract{% endblock %}
+{% block title %}Contract Review{% endblock %}
 
 {% block content %}
 <div class="container py-4 py-lg-5">
@@ -9,12 +9,13 @@
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4 p-lg-5">
-                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+
+                    <div class="d-flex align-items-start justify-content-between flex-wrap gap-3 mb-4">
                         <div>
-                            <p class="text-uppercase small text-muted fw-semibold mb-2">Contract Acceptance</p>
-                            <h2 class="fw-bold mb-1">Review and accept the contract</h2>
+                            <p class="text-uppercase small text-muted fw-semibold mb-2">Contract Review</p>
+                            <h2 class="fw-bold mb-2">Review the contract before payment authorization</h2>
                             <p class="text-muted mb-0">
-                                Review the proposal details, accept the contract, and authorize the payment hold before sending it to the artisan for final approval.
+                                Please review your request, the artisan’s proposal, and the contract terms before approving the payment hold.
                             </p>
                         </div>
 
@@ -25,9 +26,9 @@
                     </div>
 
                     <div class="border rounded-4 p-4 mb-4 bg-light-subtle">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
                             <div>
-                                <p class="text-muted small mb-2">Request</p>
+                                <p class="text-muted small mb-2">Your request</p>
                                 <h4 class="fw-bold mb-2">{{ project_request.title }}</h4>
                                 {% if project_request.description %}
                                     <p class="text-muted mb-0">{{ project_request.description }}</p>
@@ -38,50 +39,54 @@
                                 Proposal #{{ proposal.id }}
                             </span>
                         </div>
-                    </div>
 
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <div class="border rounded-4 p-3 h-100">
-                                <p class="text-muted small mb-2">Artisan</p>
-                                <h6 class="fw-bold mb-1">
-                                    {{ proposal.artisan.get_full_name|default:proposal.artisan.username }}
-                                </h6>
-                                <p class="text-muted small mb-0">@{{ proposal.artisan.username }}</p>
+                        <div class="row g-3 mt-1">
+                            <div class="col-md-4">
+                                <div class="border rounded-4 p-3 h-100 bg-white">
+                                    <p class="text-muted small mb-1">Category</p>
+                                    <div class="fw-semibold">{{ project_request.category.name }}</div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div class="col-md-6">
-                            <div class="border rounded-4 p-3 h-100">
-                                <p class="text-muted small mb-2">Estimated completion</p>
-                                <h6 class="fw-bold mb-1">
-                                    {{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}
-                                </h6>
-                                <p class="text-muted small mb-0">From the time work begins</p>
+                            {% if project_request.budget_max %}
+                            <div class="col-md-4">
+                                <div class="border rounded-4 p-3 h-100 bg-white">
+                                    <p class="text-muted small mb-1">Your budget</p>
+                                    <div class="fw-semibold">{{ project_request.budget_max|floatformat:2 }} SAR</div>
+                                </div>
                             </div>
+                            {% endif %}
+
+                            {% if project_request.deadline %}
+                            <div class="col-md-4">
+                                <div class="border rounded-4 p-3 h-100 bg-white">
+                                    <p class="text-muted small mb-1">Deadline</p>
+                                    <div class="fw-semibold">{{ project_request.deadline }}</div>
+                                </div>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
 
-                    <div class="border rounded-4 p-4 mb-4">
-                        <p class="text-muted small mb-2">Service details</p>
-                        <div class="fw-medium" style="white-space: pre-line;">
-                            {{ proposal.message }}
-                        </div>
-                    </div>
-
-                    {% with imgs=proposal.images.all %}
-                        {% if imgs %}
+                    {% with request_imgs=project_request.images.all %}
+                        {% if request_imgs %}
                             <div class="mb-4">
-                                <p class="text-muted small mb-3">Proposal images</p>
+                                <p class="text-muted small mb-3">Request images</p>
                                 <div class="row g-3">
-                                    {% for img in imgs %}
+                                    {% for img in request_imgs %}
                                         <div class="col-6 col-md-4">
-                                            <a href="{{ img.image.url }}" target="_blank" rel="noopener noreferrer" class="d-block text-decoration-none">
+                                            <a href="{{ img.image.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="d-block text-decoration-none">
                                                 <img src="{{ img.image.url }}"
-                                                     alt="Proposal image {{ forloop.counter }}"
+                                                     alt="{{ img.caption|default:'Request image' }}"
                                                      class="img-fluid rounded-4 border"
                                                      style="width: 100%; height: 180px; object-fit: cover;">
                                             </a>
+                                            {% if img.caption %}
+                                                <p class="small text-muted mt-2 mb-0">{{ img.caption }}</p>
+                                            {% endif %}
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -89,18 +94,107 @@
                         {% endif %}
                     {% endwith %}
 
+                    <div class="border rounded-4 p-4 mb-4">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-3 mb-3">
+                            <div>
+                                <p class="text-muted small mb-2">Artisan proposal</p>
+                                <h5 class="fw-bold mb-1">
+                                    {{ proposal.artisan.get_full_name|default:proposal.artisan.username }}
+                                </h5>
+                                <p class="text-muted small mb-0">@{{ proposal.artisan.username }}</p>
+                            </div>
+
+                            <span class="badge rounded-pill text-bg-primary px-3 py-2">
+                                {{ proposal.price|floatformat:2 }} SAR
+                            </span>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <div class="border rounded-4 p-3 h-100 bg-light-subtle">
+                                    <p class="text-muted small mb-1">Estimated completion</p>
+                                    <div class="fw-semibold">
+                                        {{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <div class="border rounded-4 p-3 h-100 bg-light-subtle">
+                                    <p class="text-muted small mb-1">Agreed amount</p>
+                                    <div class="fw-semibold">
+                                        {{ proposal.price|floatformat:2 }} SAR
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-4 p-4 bg-body-tertiary">
+                            <p class="text-muted small mb-2">Proposal details</p>
+                            <div class="fw-medium" style="white-space: pre-wrap;">
+                                {{ proposal.message }}
+                            </div>
+                        </div>
+                    </div>
+
+                    {% with proposal_imgs=proposal.images.all %}
+                        {% if proposal_imgs %}
+                            <div class="mb-4">
+                                <p class="text-muted small mb-3">Proposal images</p>
+                                <div class="row g-3">
+                                    {% for img in proposal_imgs %}
+                                        <div class="col-6 col-md-4">
+                                            <a href="{{ img.image.url }}"
+                                               target="_blank"
+                                               rel="noopener noreferrer"
+                                               class="d-block text-decoration-none">
+                                                <img src="{{ img.image.url }}"
+                                                     alt="{{ img.caption|default:'Proposal image' }}"
+                                                     class="img-fluid rounded-4 border"
+                                                     style="width: 100%; height: 180px; object-fit: cover;">
+                                            </a>
+                                            {% if img.caption %}
+                                                <p class="small text-muted mt-2 mb-0">{{ img.caption }}</p>
+                                            {% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+
+                    <div class="border rounded-4 p-4 mb-4 bg-light-subtle">
+                        <p class="text-muted small mb-2">Contract terms</p>
+                        <p class="mb-2">
+                            You are requesting
+                            <strong>{{ proposal.artisan.get_full_name|default:proposal.artisan.username }}</strong>
+                            to complete the work described in your request
+                            "<strong>{{ project_request.title }}</strong>".
+                        </p>
+                        <p class="mb-2">
+                            The artisan proposes to complete the work within
+                            <strong>{{ proposal.estimated_days }} day{{ proposal.estimated_days|pluralize }}</strong>
+                            for <strong>{{ proposal.price|floatformat:2 }} SAR</strong>.
+                        </p>
+                        <p class="mb-0">
+                            By continuing, you approve these terms and authorize a payment hold.
+                            The artisan will review the contract next before work begins.
+                        </p>
+                    </div>
+
                     <div class="alert alert-info border-0 rounded-4 mb-0">
                         <div class="d-flex gap-3 align-items-start">
-                            <i class="bi bi-file-earmark-text fs-4"></i>
+                            <i class="bi bi-info-circle fs-4"></i>
                             <div>
                                 <h6 class="fw-bold mb-1">What happens next</h6>
                                 <p class="mb-0 small">
-                                    By continuing, you accept this contract and authorize a payment hold for the agreed amount.
-                                    The artisan will review the contract next. Your payment will remain on hold and will only be captured after the project is completed and confirmed.
+                                    After you approve this contract, the agreed amount will be authorized on your card as a payment hold.
+                                    The artisan must still review and accept the contract before the project officially begins.
                                 </p>
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
@@ -111,7 +205,19 @@
                     <h5 class="fw-bold mb-4">Contract summary</h5>
 
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="text-muted">Project budget</span>
+                        <span class="text-muted">Request</span>
+                        <span class="fw-semibold text-end ms-3">{{ project_request.title }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Artisan</span>
+                        <span class="fw-semibold text-end ms-3">
+                            {{ proposal.artisan.get_full_name|default:proposal.artisan.username }}
+                        </span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted">Project amount</span>
                         <span class="fw-semibold">{{ proposal.price|floatformat:2 }} SAR</span>
                     </div>
 
@@ -130,7 +236,7 @@
                     <hr>
 
                     <p class="text-muted small mb-0">
-                        This step accepts the contract and places the payment on hold. The artisan must still review and accept before work begins.
+                        This step approves the contract terms and places the agreed amount on hold until the artisan reviews the contract.
                     </p>
                 </div>
             </div>
@@ -150,7 +256,8 @@
 
                             <div class="d-grid gap-3 mb-4">
                                 {% for card in cards %}
-                                    <label class="border rounded-4 p-3 payment-card-option {% if card.is_default %}border-primary{% endif %}">
+                                    <label for="card_{{ card.id }}"
+                                           class="border rounded-4 p-3 payment-card-option d-block {% if card.is_default %}border-primary{% endif %}">
                                         <div class="d-flex justify-content-between align-items-start gap-3">
                                             <div class="d-flex align-items-start gap-3">
                                                 <input
@@ -164,7 +271,9 @@
                                                 >
                                                 <div>
                                                     <div class="d-flex align-items-center flex-wrap gap-2 mb-1">
-                                                        <span class="fw-semibold text-capitalize">{{ card.brand|default:"Card" }}</span>
+                                                        <span class="fw-semibold text-capitalize">
+                                                            {{ card.brand|default:"Card" }}
+                                                        </span>
                                                         {% if card.is_default %}
                                                             <span class="badge rounded-pill text-bg-primary">Default</span>
                                                         {% endif %}
@@ -187,14 +296,20 @@
                             </div>
 
                             <div class="form-check mb-4">
-                                <input class="form-check-input" type="checkbox" value="1" id="accept_terms" required>
+                                <input class="form-check-input"
+                                       type="checkbox"
+                                       name="accept_terms"
+                                       value="1"
+                                       id="accept_terms"
+                                       required>
                                 <label class="form-check-label small text-muted" for="accept_terms">
-                                    I have reviewed the contract details, agree to the proposal terms, and authorize a payment hold for this project.
+                                    I confirm that I reviewed my request, the artisan’s proposal, and the contract terms,
+                                    and I authorize a payment hold for this project.
                                 </label>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-semibold">
-                                Accept Contract & Authorize Hold
+                                Approve Contract & Authorize Hold
                             </button>
                         </form>
                     {% else %}
@@ -204,7 +319,7 @@
                             </div>
                             <h6 class="fw-bold mb-2">No saved cards yet</h6>
                             <p class="text-muted small mb-3">
-                                Add a payment method to authorize the hold and continue with the contract.
+                                Add a payment method to authorize the payment hold and continue.
                             </p>
                             <a href="{% url 'payment:add_card' %}" class="btn btn-primary rounded-pill">
                                 Add Your First Card
@@ -222,7 +337,8 @@
                         <span class="fw-bold fs-5">{{ proposal.price|floatformat:2 }} SAR</span>
                     </div>
                     <p class="text-muted small mt-3 mb-0">
-                        This amount will be authorized on your card and held until the project is completed, canceled, or the authorization expires.
+                        This amount will be authorized on your card and held until the project is completed,
+                        canceled, or the authorization expires.
                     </p>
                 </div>
             </div>
